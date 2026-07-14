@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SesoLibre Somnia</string>
+    <string name="home_tagline">Monitor nocturno de sueño — privado y local</string>
+
+    <string name="channel_monitor_name">Monitoreo nocturno</string>
+    <string name="channel_monitor_desc">Indica que el micrófono está activo durante la sesión de sueño</string>
+
+    <string name="notif_monitoring_title">Monitoreando tu sueño</string>
+    <string name="notif_monitoring_text">%1$s · %2$s</string>
+    <string name="notif_action_stop">Detener</string>
+
+    <string name="monitoring_active">Monitoreo activo</string>
+    <string name="monitoring_idle">Listo para monitorear</string>
+    <string name="monitoring_idle_hint">Inicia al acostarte. El audio se procesa en tu teléfono; nada sale del dispositivo.</string>
+    <string name="start_monitoring">Iniciar monitoreo</string>
+    <string name="stop_monitoring">Detener</string>
+    <string name="minutes_saved">%1$d minutos registrados</string>
+    <string name="db_approx_format">%1$d dB (aprox.)</string>
+
+    <string name="battery_card_title">Optimización de batería</string>
+    <string name="battery_card_body">Para que el monitoreo no se interrumpa a media noche, excluye a Somnia de la optimización de batería.</string>
+    <string name="battery_card_action">Abrir ajustes de batería</string>
+
+    <string name="sessions_header">Noches registradas</string>
+    <string name="session_in_progress">en curso</string>
+    <string name="session_db_summary">Ruido: mín %1$d · prom %2$d · máx %3$d dB (aprox.)</string>
+    <string name="session_no_samples">Sin datos de ruido todavía (se guarda un punto por minuto).</string>
+    <string name="session_delete">Eliminar sesión</string>
+
+    <string name="mic_permission_needed">Somnia necesita el micrófono para monitorear tu sueño. Todo se procesa localmente.</string>
+</resources>

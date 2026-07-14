@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+build/
+app/build/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Config local (rutas de SDK)
+local.properties
+
+# Firma: NUNCA subir el keystore ni sus contraseñas
+keystore.properties
+keystore/
+*.jks
+*.keystore
+
+# Misc
+.DS_Store
+*.log
+.kotlin/

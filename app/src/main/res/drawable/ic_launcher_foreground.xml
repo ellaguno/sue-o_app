@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Luna creciente centrada en la zona segura del ícono adaptativo -->
+    <path
+        android:fillColor="#9FB4FF"
+        android:pathData="M60,30c-13.25,0 -24,10.75 -24,24s10.75,24 24,24c2.21,0 4.36,-0.3 6.4,-0.86 -8.35,-2.5 -14.4,-10.24 -14.4,-19.14s6.05,-16.64 14.4,-19.14C64.36,30.3 62.21,30 60,30z" />
+    <path
+        android:fillColor="#C7B8F5"
+        android:pathData="M72,40l1.5,3.5L77,45l-3.5,1.5L72,50l-1.5,-3.5L67,45l3.5,-1.5z" />
+</vector>
