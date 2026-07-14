@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -20,7 +22,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -29,12 +33,26 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sesolibre.somnia.R
 import com.sesolibre.somnia.data.db.SoundEvent
+import com.sesolibre.somnia.ml.ApneaHeuristic
+import com.sesolibre.somnia.ml.SomniaCategory
 import com.sesolibre.somnia.ui.components.NoiseSparkline
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
+
+@Composable
+fun categoryLabel(key: String?): String = when (SomniaCategory.fromKey(key)) {
+    SomniaCategory.SNORING -> stringResource(R.string.cat_snoring)
+    SomniaCategory.BREATHING -> stringResource(R.string.cat_breathing)
+    SomniaCategory.COUGH -> stringResource(R.string.cat_cough)
+    SomniaCategory.SPEECH -> stringResource(R.string.cat_speech)
+    SomniaCategory.MOVEMENT -> stringResource(R.string.cat_movement)
+    SomniaCategory.ENVIRONMENT -> stringResource(R.string.cat_environment)
+    SomniaCategory.OTHER -> stringResource(R.string.cat_other)
+    null -> stringResource(R.string.cat_unknown)
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,10 +64,24 @@ fun NightScreen(
     val samples by viewModel.samples.collectAsStateWithLifecycle()
     val events by viewModel.events.collectAsStateWithLifecycle()
     val playingId by viewModel.playingEventId.collectAsStateWithLifecycle()
+    val pausePatterns by viewModel.pausePatternCount.collectAsStateWithLifecycle()
+
+    var relabeling by remember { mutableStateOf<SoundEvent?>(null) }
 
     val zone = remember { ZoneId.systemDefault() }
     val dateFmt = remember { DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale.getDefault()) }
     val timeFmt = remember { DateTimeFormatter.ofPattern("HH:mm:ss", Locale.getDefault()) }
+
+    relabeling?.let { event ->
+        RelabelDialog(
+            current = SomniaCategory.fromKey(ApneaHeuristic.effectiveCategory(event)),
+            onSelect = { category ->
+                viewModel.relabel(event, category)
+                relabeling = null
+            },
+            onDismiss = { relabeling = null },
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -88,6 +120,21 @@ fun NightScreen(
                             ),
                             style = MaterialTheme.typography.bodyMedium,
                         )
+                        val snores = events.filter {
+                            ApneaHeuristic.effectiveCategory(it) == SomniaCategory.SNORING.key
+                        }
+                        if (snores.isNotEmpty()) {
+                            val snoreMin = snores.sumOf { it.durationMs } / 60_000.0
+                            Text(
+                                stringResource(
+                                    R.string.night_snore_summary,
+                                    snores.size,
+                                    "%.1f".format(snoreMin),
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
                         if (s.batteryStartPct != null && s.batteryEndPct != null) {
                             Text(
                                 stringResource(
@@ -99,6 +146,24 @@ fun NightScreen(
                             )
                         }
                         NoiseSparkline(samples, calibrationOffset = s.calibrationDbOffset)
+                    }
+                }
+            }
+
+            if (pausePatterns > 0) {
+                item {
+                    Card {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                stringResource(R.string.pause_pattern_title),
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                            Text(
+                                stringResource(R.string.pause_pattern_body, pausePatterns),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 }
             }
@@ -127,6 +192,7 @@ fun NightScreen(
                     timeText = timeFmt.format(Instant.ofEpochMilli(event.startEpochMs).atZone(zone)),
                     calibrationOffset = s.calibrationDbOffset,
                     onTogglePlay = { viewModel.togglePlay(event) },
+                    onRelabel = { relabeling = event },
                 )
             }
 
@@ -147,6 +213,7 @@ private fun EventRow(
     timeText: String,
     calibrationOffset: Double,
     onTogglePlay: () -> Unit,
+    onRelabel: () -> Unit,
 ) {
     Card {
         Row(
@@ -156,7 +223,10 @@ private fun EventRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier.weight(1f),
+            ) {
                 Text(timeText, style = MaterialTheme.typography.titleSmall)
                 Text(
                     stringResource(
@@ -166,6 +236,19 @@ private fun EventRow(
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                AssistChip(
+                    onClick = onRelabel,
+                    label = {
+                        val text = categoryLabel(ApneaHeuristic.effectiveCategory(event))
+                        val suffix = when {
+                            event.manualLabel != null -> " ✎"
+                            event.confidence != null ->
+                                " · ${(event.confidence * 100).roundToInt()}%"
+                            else -> ""
+                        }
+                        Text(text + suffix)
+                    },
                 )
             }
             if (event.clipPath != null) {
@@ -184,4 +267,36 @@ private fun EventRow(
             }
         }
     }
+}
+
+@Composable
+private fun RelabelDialog(
+    current: SomniaCategory?,
+    onSelect: (SomniaCategory) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.relabel_title)) },
+        text = {
+            Column {
+                SomniaCategory.entries.forEach { category ->
+                    TextButton(
+                        onClick = { onSelect(category) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            categoryLabel(category.key) +
+                                if (category == current) " ✓" else "",
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
 }

@@ -27,6 +27,7 @@ import com.sesolibre.somnia.data.MonitorState
 import com.sesolibre.somnia.data.MonitorStateHolder
 import com.sesolibre.somnia.data.SessionRepository
 import com.sesolibre.somnia.data.db.SoundEvent
+import com.sesolibre.somnia.ml.YamnetClassifier
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -49,6 +50,14 @@ class MonitorService : LifecycleService() {
     private var audioEngine: AudioEngine? = null
     private var pipeline: AudioPipeline? = null
     private var wakeLock: PowerManager.WakeLock? = null
+
+    /** YAMNet se carga una sola vez por sesión; si falla, se sigue sin clasificar. */
+    private val classifierDelegate = lazy {
+        runCatching { YamnetClassifier(this) }
+            .onFailure { android.util.Log.e("MonitorService", "No se pudo cargar YAMNet", it) }
+            .getOrNull()
+    }
+    private val classifier: YamnetClassifier? get() = classifierDelegate.value
     private val aggregator = NoiseAggregator()
     private var sessionId: Long = -1
     private var sessionStartMs: Long = 0
@@ -109,6 +118,9 @@ class MonitorService : LifecycleService() {
         val currentSessionId = sessionId
         if (currentSessionId <= 0) return
         lifecycleScope.launch(Dispatchers.IO) {
+            // Clasificación on-device (YAMNet) sobre el PCM del evento
+            val classification = runCatching { classifier?.classify(capture.pcm) }.getOrNull()
+
             // Tope de clips por noche: los metadatos se guardan siempre,
             // pero el audio ya no, para no llenar el almacenamiento.
             val underCap = repository.clipCountForSession(currentSessionId) < MAX_CLIPS_PER_SESSION
@@ -128,6 +140,8 @@ class MonitorService : LifecycleService() {
                     durationMs = capture.endOffsetMs - capture.startOffsetMs,
                     dbPeak = capture.peakDbfs,
                     dbAvg = capture.avgDbfs,
+                    category = classification?.category?.key ?: SoundEvent.CATEGORY_UNKNOWN,
+                    confidence = classification?.score?.toDouble(),
                     clipPath = clipPath,
                 )
             )
@@ -213,6 +227,9 @@ class MonitorService : LifecycleService() {
     override fun onDestroy() {
         audioEngine?.stop()
         wakeLock?.let { if (it.isHeld) it.release() }
+        if (classifierDelegate.isInitialized()) {
+            runCatching { classifierDelegate.value?.close() }
+        }
         super.onDestroy()
     }
 

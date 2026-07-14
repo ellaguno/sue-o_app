@@ -13,11 +13,12 @@ Monitor nocturno **no invasivo y privado**: escucha el micrófono durante la noc
 - [Guía de release / Google Play](docs/03-RELEASE.md)
 
 ## Estado
-🔨 Etapas 0–2 completadas:
+🔨 Etapas 0–3 completadas:
 - **0–1:** proyecto Android (Kotlin + Compose + Hilt + Room), servicio en primer plano con captura a 16 kHz, medición de dB por segundo agregada por minuto, sesiones en Room, CI en GitHub Actions.
 - **2:** detector adaptativo de eventos con histéresis y pre-roll de 1 s (buffer circular), clips comprimidos **Opus/OGG** (fallback AAC en Android 8–9) solo de los eventos detectados, entidad `SoundEvent`, pantalla "Noche" con reproductor de clips, retención automática (30 días de audio, metadatos para siempre) y tope de 200 clips/noche.
+- **3:** clasificación on-device con **YAMNet** (LiteRT, 521 clases AudioSet, modelo de 4 MB en assets) mapeada a 7 categorías propias (ronquido, respiración, tos, habla, movimiento, ambiente, otro), chips de categoría con confianza y **reetiquetado manual** en la pantalla Noche, resumen de ronquidos por noche, y heurística de patrón ronquido→pausa→reanudación (con descargo explícito de que no es diagnóstico).
 
-Pendiente: prueba de una noche completa en dispositivos reales; siguiente: Etapa 3 (clasificación YAMNet).
+Pendiente: prueba de una noche completa en dispositivo real; siguiente: Etapa 4 (perfil, acompañantes y bitácora).
 
 ## Compilar
 

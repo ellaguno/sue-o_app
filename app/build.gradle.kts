@@ -61,6 +61,9 @@ android {
     buildFeatures {
         compose = true
     }
+    androidResources {
+        noCompress += "tflite" // permite mapear el modelo directo desde assets
+    }
 }
 
 dependencies {
@@ -79,6 +82,7 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.navigation.compose)
+    implementation(libs.tensorflow.lite)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
     debugImplementation(libs.compose.ui.tooling)

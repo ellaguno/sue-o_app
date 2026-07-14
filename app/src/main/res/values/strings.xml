@@ -30,6 +30,22 @@
     <string name="event_stop">■ Detener</string>
     <string name="event_no_clip">sin clip</string>
 
+    <string name="cat_snoring">Ronquido</string>
+    <string name="cat_breathing">Respiración</string>
+    <string name="cat_cough">Tos</string>
+    <string name="cat_speech">Habla</string>
+    <string name="cat_movement">Movimiento</string>
+    <string name="cat_environment">Ambiente</string>
+    <string name="cat_other">Otro</string>
+    <string name="cat_unknown">Sin clasificar</string>
+
+    <string name="night_snore_summary">Ronquidos: %1$d eventos · %2$s min</string>
+    <string name="relabel_title">Corregir etiqueta</string>
+    <string name="cancel">Cancelar</string>
+
+    <string name="pause_pattern_title">Patrón de pausas observado</string>
+    <string name="pause_pattern_body">Se observaron %1$d secuencias de ronquido → pausa larga → reanudación brusca. Esto NO es un diagnóstico; si se repite con frecuencia, coméntalo con un médico.</string>
+
     <string name="battery_card_title">Optimización de batería</string>
     <string name="battery_card_body">Para que el monitoreo no se interrumpa a media noche, excluye a Somnia de la optimización de batería.</string>
     <string name="battery_card_action">Abrir ajustes de batería</string>
