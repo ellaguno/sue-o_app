@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git ls-remote *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'Análisis de alcances y plan de desarrollo inicial *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(curl -fsSL -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.14.0/gradle/wrapper/gradle-wrapper.jar)",
+      "Bash(curl -fsSL -o gradlew https://raw.githubusercontent.com/gradle/gradle/v8.14.0/gradlew)",
+      "Bash(chmod +x gradlew)",
+      "Bash(./gradlew testDebugUnitTest assembleDebug --no-daemon)",
+      "Bash(./gradlew bundleRelease)",
+      "Bash(jarsigner -verify app/build/outputs/bundle/release/app-release.aab)",
+      "Bash(git reset *)",
+      "Bash(curl -fsSL -o gradlew.bat https://raw.githubusercontent.com/gradle/gradle/v8.14.0/gradlew.bat)",
+      "Bash(git commit -q -m 'Etapas 0-1: proyecto Android con servicio de monitoreo nocturno y medición de dB *)",
+      "Bash(~/Android/Sdk/platform-tools/adb devices *)",
+      "Bash(./gradlew testDebugUnitTest assembleDebug)",
+      "Bash(grep -v '^\\\\s*$')",
+      "Bash(git commit -q -m 'Etapa 2: detector de eventos, clips Opus y pantalla Noche *)"
+    ]
+  }
+}

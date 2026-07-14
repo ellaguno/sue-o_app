@@ -9,15 +9,16 @@ import android.media.MediaRecorder
 import android.util.Log
 
 /**
- * Captura continua del micrófono a 16 kHz mono PCM 16-bit y emite una lectura
- * de dBFS por segundo. Corre en su propio hilo; diseñado para vivir dentro del
- * servicio en primer plano durante toda la noche.
+ * Captura continua del micrófono a 16 kHz mono PCM 16-bit y entrega las
+ * muestras crudas a [onSamples] (normalmente un [AudioPipeline]). Corre en su
+ * propio hilo; diseñado para vivir dentro del servicio en primer plano
+ * durante toda la noche.
  *
  * Usa la fuente UNPROCESSED cuando el dispositivo la soporta (sin AGC ni
  * supresión de ruido, necesario para que los dB sean comparables); si no,
  * VOICE_RECOGNITION, que en la mayoría de dispositivos desactiva el AGC.
  */
-class AudioEngine(private val onSecondReading: (dbfs: Double) -> Unit) {
+class AudioEngine(private val onSamples: (samples: ShortArray, length: Int) -> Unit) {
 
     @Volatile
     private var running = false
@@ -55,23 +56,12 @@ class AudioEngine(private val onSecondReading: (dbfs: Double) -> Unit) {
 
         thread = Thread({
             val chunk = ShortArray(CHUNK_SAMPLES)
-            var sumOfSquares = 0.0
-            var count = 0
             record.startRecording()
             try {
                 while (running) {
                     val read = record.read(chunk, 0, chunk.size)
                     if (read <= 0) continue
-                    for (i in 0 until read) {
-                        val s = chunk[i].toDouble()
-                        sumOfSquares += s * s
-                    }
-                    count += read
-                    if (count >= SAMPLE_RATE) { // ventana de 1 segundo
-                        onSecondReading(DbMeter.dbfsFromSumOfSquares(sumOfSquares, count))
-                        sumOfSquares = 0.0
-                        count = 0
-                    }
+                    onSamples(chunk, read)
                 }
             } finally {
                 runCatching { record.stop() }

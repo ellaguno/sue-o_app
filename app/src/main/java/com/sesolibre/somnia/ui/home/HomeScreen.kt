@@ -1,10 +1,9 @@
 package com.sesolibre.somnia.ui.home
 
-import android.content.Intent
 import android.content.Context
+import android.content.Intent
 import android.os.PowerManager
 import android.provider.Settings
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,8 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -42,7 +39,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sesolibre.somnia.R
 import com.sesolibre.somnia.audio.DbMeter
-import com.sesolibre.somnia.data.db.NoiseSample
 import com.sesolibre.somnia.data.db.SessionWithStats
 import kotlinx.coroutines.delay
 import java.time.Instant
@@ -54,12 +50,11 @@ import kotlin.math.roundToInt
 @Composable
 fun HomeScreen(
     onRequestStart: () -> Unit,
+    onOpenSession: (Long) -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val monitor by viewModel.monitor.collectAsStateWithLifecycle()
     val sessions by viewModel.sessions.collectAsStateWithLifecycle()
-    val expandedId by viewModel.expandedSessionId.collectAsStateWithLifecycle()
-    val expandedSamples by viewModel.expandedSamples.collectAsStateWithLifecycle()
 
     Scaffold { padding ->
         LazyColumn(
@@ -89,6 +84,7 @@ fun HomeScreen(
                     startedAtMs = monitor.startedAtMs,
                     currentDbfs = monitor.currentDbfs,
                     minutesSaved = monitor.minutesSaved,
+                    eventsDetected = monitor.eventsDetected,
                     onStart = onRequestStart,
                     onStop = viewModel::stopMonitoring,
                 )
@@ -105,13 +101,7 @@ fun HomeScreen(
                     )
                 }
                 items(sessions, key = { it.session.id }) { s ->
-                    SessionCard(
-                        item = s,
-                        expanded = expandedId == s.session.id,
-                        samples = if (expandedId == s.session.id) expandedSamples else emptyList(),
-                        onClick = { viewModel.toggleExpanded(s.session.id) },
-                        onDelete = { viewModel.deleteSession(s.session.id) },
-                    )
+                    SessionCard(item = s, onClick = { onOpenSession(s.session.id) })
                 }
             }
 
@@ -126,6 +116,7 @@ private fun MonitorCard(
     startedAtMs: Long?,
     currentDbfs: Double?,
     minutesSaved: Int,
+    eventsDetected: Int,
     onStart: () -> Unit,
     onStop: () -> Unit,
 ) {
@@ -163,7 +154,7 @@ private fun MonitorCard(
                 } ?: "—"
                 Text(dbText, style = MaterialTheme.typography.titleLarge)
                 Text(
-                    stringResource(R.string.minutes_saved, minutesSaved),
+                    stringResource(R.string.monitor_live_stats, minutesSaved, eventsDetected),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -219,13 +210,7 @@ private fun isIgnoringBatteryOptimizations(context: Context): Boolean =
         .isIgnoringBatteryOptimizations(context.packageName)
 
 @Composable
-private fun SessionCard(
-    item: SessionWithStats,
-    expanded: Boolean,
-    samples: List<NoiseSample>,
-    onClick: () -> Unit,
-    onDelete: () -> Unit,
-) {
+private fun SessionCard(item: SessionWithStats, onClick: () -> Unit) {
     val s = item.session
     val zone = remember { ZoneId.systemDefault() }
     val dateFmt = remember { DateTimeFormatter.ofPattern("EEE d MMM · HH:mm", Locale.getDefault()) }
@@ -259,42 +244,6 @@ private fun SessionCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (expanded) {
-                if (samples.size >= 2) {
-                    NoiseSparkline(samples, calibrationOffset = s.calibrationDbOffset)
-                } else {
-                    Text(
-                        stringResource(R.string.session_no_samples),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                TextButton(onClick = onDelete) { Text(stringResource(R.string.session_delete)) }
-            }
         }
-    }
-}
-
-/** Curva simple de dB promedio por minuto (gráficas completas llegan en Etapa 5). */
-@Composable
-private fun NoiseSparkline(samples: List<NoiseSample>, calibrationOffset: Double) {
-    val color = MaterialTheme.colorScheme.primary
-    val values = samples.map { (it.dbAvg + calibrationOffset).toFloat() }
-    val minV = values.min()
-    val maxV = (values.max()).coerceAtLeast(minV + 1f)
-    Canvas(
-        Modifier
-            .fillMaxWidth()
-            .height(72.dp)
-            .padding(vertical = 4.dp),
-    ) {
-        val stepX = size.width / (values.size - 1).coerceAtLeast(1)
-        val path = Path()
-        values.forEachIndexed { i, v ->
-            val x = i * stepX
-            val y = size.height * (1f - (v - minV) / (maxV - minV))
-            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
-        }
-        drawPath(path, color = color, style = Stroke(width = 3f))
     }
 }

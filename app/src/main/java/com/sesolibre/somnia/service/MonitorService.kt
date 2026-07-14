@@ -19,13 +19,18 @@ import com.sesolibre.somnia.MainActivity
 import com.sesolibre.somnia.R
 import com.sesolibre.somnia.SomniaApp
 import com.sesolibre.somnia.audio.AudioEngine
+import com.sesolibre.somnia.audio.AudioPipeline
+import com.sesolibre.somnia.audio.ClipEncoder
 import com.sesolibre.somnia.audio.DbMeter
 import com.sesolibre.somnia.audio.NoiseAggregator
 import com.sesolibre.somnia.data.MonitorState
 import com.sesolibre.somnia.data.MonitorStateHolder
 import com.sesolibre.somnia.data.SessionRepository
+import com.sesolibre.somnia.data.db.SoundEvent
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
@@ -42,9 +47,11 @@ class MonitorService : LifecycleService() {
     @Inject lateinit var stateHolder: MonitorStateHolder
 
     private var audioEngine: AudioEngine? = null
+    private var pipeline: AudioPipeline? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private val aggregator = NoiseAggregator()
     private var sessionId: Long = -1
+    private var sessionStartMs: Long = 0
     private var lastNotificationUpdateMs = 0L
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -77,6 +84,7 @@ class MonitorService : LifecycleService() {
             .apply { acquire(MAX_SESSION_MS) }
 
         val startMs = System.currentTimeMillis()
+        sessionStartMs = startMs
         lifecycleScope.launch {
             sessionId = repository.startSession(startMs, batteryPct())
             stateHolder.update {
@@ -86,7 +94,44 @@ class MonitorService : LifecycleService() {
                     startedAtMs = startMs,
                 )
             }
-            audioEngine = AudioEngine(::onSecondReading).also { it.start(this@MonitorService) }
+            pipeline = AudioPipeline(
+                onSecondReading = ::onSecondReading,
+                onEventCaptured = ::onEventCaptured,
+            )
+            audioEngine = AudioEngine { samples, length ->
+                pipeline?.feed(samples, length)
+            }.also { it.start(this@MonitorService) }
+        }
+    }
+
+    /** Llamado desde el hilo de audio cuando el detector cierra un evento válido. */
+    private fun onEventCaptured(capture: AudioPipeline.EventCapture) {
+        val currentSessionId = sessionId
+        if (currentSessionId <= 0) return
+        lifecycleScope.launch(Dispatchers.IO) {
+            // Tope de clips por noche: los metadatos se guardan siempre,
+            // pero el audio ya no, para no llenar el almacenamiento.
+            val underCap = repository.clipCountForSession(currentSessionId) < MAX_CLIPS_PER_SESSION
+            var clipPath: String? = null
+            if (underCap) {
+                val dir = File(filesDir, "clips/session_$currentSessionId")
+                val file = File(dir, "evt_${capture.startOffsetMs}.${ClipEncoder.fileExtension}")
+                if (ClipEncoder.encode(capture.pcm, AudioEngine.SAMPLE_RATE, file)) {
+                    clipPath = file.absolutePath
+                }
+            }
+            repository.saveEvent(
+                SoundEvent(
+                    sessionId = currentSessionId,
+                    startEpochMs = sessionStartMs + capture.startOffsetMs,
+                    endEpochMs = sessionStartMs + capture.endOffsetMs,
+                    durationMs = capture.endOffsetMs - capture.startOffsetMs,
+                    dbPeak = capture.peakDbfs,
+                    dbAvg = capture.avgDbfs,
+                    clipPath = clipPath,
+                )
+            )
+            stateHolder.update { it.copy(eventsDetected = it.eventsDetected + 1) }
         }
     }
 
@@ -122,6 +167,7 @@ class MonitorService : LifecycleService() {
     private fun stopMonitoring() {
         audioEngine?.stop()
         audioEngine = null
+        pipeline = null
         val endedSessionId = sessionId
         lifecycleScope.launch {
             if (endedSessionId > 0) {
@@ -176,6 +222,7 @@ class MonitorService : LifecycleService() {
         private const val NOTIFICATION_ID = 1
         private const val NOTIFICATION_UPDATE_MS = 30_000L
         private const val MAX_SESSION_MS = 14 * 60 * 60 * 1000L // tope de seguridad: 14 h
+        private const val MAX_CLIPS_PER_SESSION = 200
 
         fun start(context: Context) {
             context.startForegroundService(

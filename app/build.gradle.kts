@@ -78,6 +78,7 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.navigation.compose)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
     debugImplementation(libs.compose.ui.tooling)

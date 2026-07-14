@@ -9,8 +9,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.sesolibre.somnia.service.MonitorService
 import com.sesolibre.somnia.ui.home.HomeScreen
+import com.sesolibre.somnia.ui.night.NightScreen
 import com.sesolibre.somnia.ui.theme.SomniaTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -30,7 +36,21 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             SomniaTheme {
-                HomeScreen(onRequestStart = ::startWithPermissions)
+                val nav = rememberNavController()
+                NavHost(navController = nav, startDestination = "home") {
+                    composable("home") {
+                        HomeScreen(
+                            onRequestStart = ::startWithPermissions,
+                            onOpenSession = { id -> nav.navigate("night/$id") },
+                        )
+                    }
+                    composable(
+                        route = "night/{sessionId}",
+                        arguments = listOf(navArgument("sessionId") { type = NavType.LongType }),
+                    ) {
+                        NightScreen(onBack = { nav.popBackStack() })
+                    }
+                }
             }
         }
     }

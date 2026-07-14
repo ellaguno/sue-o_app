@@ -27,6 +27,9 @@ interface SessionDao {
     @Query("SELECT * FROM sessions WHERE id = :id")
     suspend fun byId(id: Long): Session?
 
+    @Query("SELECT * FROM sessions WHERE id = :id")
+    fun observeById(id: Long): Flow<Session?>
+
     @Query(
         """
         SELECT s.*,
@@ -53,4 +56,36 @@ interface NoiseSampleDao {
 
     @Query("SELECT * FROM noise_samples WHERE sessionId = :sessionId ORDER BY minuteIndex")
     fun bySession(sessionId: Long): Flow<List<NoiseSample>>
+}
+
+@Dao
+interface SoundEventDao {
+    @Insert
+    suspend fun insert(event: SoundEvent): Long
+
+    @Update
+    suspend fun update(event: SoundEvent)
+
+    @Query("SELECT * FROM sound_events WHERE sessionId = :sessionId ORDER BY startEpochMs")
+    fun bySession(sessionId: Long): Flow<List<SoundEvent>>
+
+    @Query("SELECT COUNT(*) FROM sound_events WHERE sessionId = :sessionId AND clipPath IS NOT NULL")
+    suspend fun clipCountForSession(sessionId: Long): Int
+
+    /** Eventos con clip cuya sesión empezó antes del corte (para retención). */
+    @Query(
+        """
+        SELECT e.* FROM sound_events e
+        JOIN sessions s ON s.id = e.sessionId
+        WHERE e.clipPath IS NOT NULL AND s.startEpochMs < :cutoffEpochMs
+        """
+    )
+    suspend fun eventsWithClipsOlderThan(cutoffEpochMs: Long): List<SoundEvent>
+
+    @Query("UPDATE sound_events SET clipPath = NULL WHERE id IN (:ids)")
+    suspend fun clearClipPaths(ids: List<Long>)
+
+    /** Rutas de clips de una sesión (para borrarlos junto con la sesión). */
+    @Query("SELECT clipPath FROM sound_events WHERE sessionId = :sessionId AND clipPath IS NOT NULL")
+    suspend fun clipPathsForSession(sessionId: Long): List<String>
 }

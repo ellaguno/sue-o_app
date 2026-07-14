@@ -14,6 +14,7 @@ data class MonitorState(
     val startedAtMs: Long? = null,
     val currentDbfs: Double? = null,
     val minutesSaved: Int = 0,
+    val eventsDetected: Int = 0,
 )
 
 @Singleton
