@@ -83,6 +83,7 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     implementation(libs.navigation.compose)
     implementation(libs.tensorflow.lite)
+    implementation(libs.androidx.datastore.preferences)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
     debugImplementation(libs.compose.ui.tooling)

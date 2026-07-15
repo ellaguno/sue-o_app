@@ -17,6 +17,10 @@ import androidx.navigation.navArgument
 import com.sesolibre.somnia.service.MonitorService
 import com.sesolibre.somnia.ui.home.HomeScreen
 import com.sesolibre.somnia.ui.night.NightScreen
+import com.sesolibre.somnia.ui.profile.ProfileScreen
+import com.sesolibre.somnia.ui.questionnaires.EpworthScreen
+import com.sesolibre.somnia.ui.questionnaires.StopBangScreen
+import com.sesolibre.somnia.ui.settings.SettingsScreen
 import com.sesolibre.somnia.ui.theme.SomniaTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -42,6 +46,8 @@ class MainActivity : ComponentActivity() {
                         HomeScreen(
                             onRequestStart = ::startWithPermissions,
                             onOpenSession = { id -> nav.navigate("night/$id") },
+                            onOpenProfile = { nav.navigate("profile") },
+                            onOpenSettings = { nav.navigate("settings") },
                         )
                     }
                     composable(
@@ -49,6 +55,22 @@ class MainActivity : ComponentActivity() {
                         arguments = listOf(navArgument("sessionId") { type = NavType.LongType }),
                     ) {
                         NightScreen(onBack = { nav.popBackStack() })
+                    }
+                    composable("settings") {
+                        SettingsScreen(onBack = { nav.popBackStack() })
+                    }
+                    composable("profile") {
+                        ProfileScreen(
+                            onBack = { nav.popBackStack() },
+                            onOpenEpworth = { nav.navigate("epworth") },
+                            onOpenStopBang = { nav.navigate("stopbang") },
+                        )
+                    }
+                    composable("epworth") {
+                        EpworthScreen(onBack = { nav.popBackStack() })
+                    }
+                    composable("stopbang") {
+                        StopBangScreen(onBack = { nav.popBackStack() })
                     }
                 }
             }

@@ -72,6 +72,9 @@ interface SoundEventDao {
     @Query("SELECT COUNT(*) FROM sound_events WHERE sessionId = :sessionId AND clipPath IS NOT NULL")
     suspend fun clipCountForSession(sessionId: Long): Int
 
+    @Query("UPDATE sound_events SET attributedToCompanionId = :companionId WHERE id = :eventId")
+    suspend fun setAttribution(eventId: Long, companionId: Long?)
+
     /** Eventos con clip cuya sesión empezó antes del corte (para retención). */
     @Query(
         """

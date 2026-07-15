@@ -1,6 +1,9 @@
 package com.sesolibre.somnia.data
 
 import com.sesolibre.somnia.audio.MinuteStats
+import com.sesolibre.somnia.data.db.NightLog
+import com.sesolibre.somnia.data.db.NightLogDao
+import com.sesolibre.somnia.data.db.NightTag
 import com.sesolibre.somnia.data.db.NoiseSample
 import com.sesolibre.somnia.data.db.NoiseSampleDao
 import com.sesolibre.somnia.data.db.Session
@@ -18,6 +21,7 @@ class SessionRepository @Inject constructor(
     private val sessionDao: SessionDao,
     private val noiseSampleDao: NoiseSampleDao,
     private val soundEventDao: SoundEventDao,
+    private val nightLogDao: NightLogDao,
 ) {
 
     suspend fun startSession(nowMs: Long, batteryPct: Int?): Long =
@@ -54,6 +58,23 @@ class SessionRepository @Inject constructor(
     fun samples(sessionId: Long): Flow<List<NoiseSample>> = noiseSampleDao.bySession(sessionId)
 
     fun events(sessionId: Long): Flow<List<SoundEvent>> = soundEventDao.bySession(sessionId)
+
+    /** Atribuye (o desatribuye, con null) un evento a un acompañante. */
+    suspend fun attributeEvent(eventId: Long, companionId: Long?) =
+        soundEventDao.setAttribution(eventId, companionId)
+
+    fun nightLog(sessionId: Long): Flow<NightLog?> = nightLogDao.observe(sessionId)
+
+    suspend fun saveNightLog(sessionId: Long, tags: Collection<NightTag>, note: String?) {
+        nightLogDao.upsert(
+            NightLog(
+                sessionId = sessionId,
+                updatedEpochMs = System.currentTimeMillis(),
+                tagsCsv = NightLog.csvOf(tags),
+                note = note?.trim()?.takeIf { it.isNotEmpty() },
+            )
+        )
+    }
 
     /** Borra la sesión, sus filas (cascade) y los archivos de clips. */
     suspend fun deleteSession(sessionId: Long) {

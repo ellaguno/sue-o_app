@@ -4,9 +4,13 @@ import android.media.MediaPlayer
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sesolibre.somnia.data.ProfileRepository
 import com.sesolibre.somnia.data.SessionRepository
+import com.sesolibre.somnia.data.db.NightLog
+import com.sesolibre.somnia.data.db.NightTag
 import com.sesolibre.somnia.data.db.NoiseSample
 import com.sesolibre.somnia.data.db.Session
+import com.sesolibre.somnia.data.db.SleepCompanion
 import com.sesolibre.somnia.data.db.SoundEvent
 import com.sesolibre.somnia.ml.ApneaHeuristic
 import com.sesolibre.somnia.ml.SomniaCategory
@@ -25,6 +29,7 @@ import javax.inject.Inject
 class NightViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: SessionRepository,
+    profileRepository: ProfileRepository,
 ) : ViewModel() {
 
     private val sessionId: Long = checkNotNull(savedStateHandle["sessionId"])
@@ -48,6 +53,26 @@ class NightViewModel @Inject constructor(
         viewModelScope.launch {
             repository.updateEvent(event.copy(manualLabel = category.key))
         }
+    }
+
+    /** Acompañantes activos (para atribución y disclaimer multi-persona). */
+    val companions: StateFlow<List<SleepCompanion>> = profileRepository.observeCompanions()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val sleepsAlone: StateFlow<Boolean> = profileRepository.observeProfile()
+        .map { it?.sleepsAlone ?: true }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val nightLog: StateFlow<NightLog?> = repository.nightLog(sessionId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    fun saveNightLog(tags: Set<NightTag>, note: String?) {
+        viewModelScope.launch { repository.saveNightLog(sessionId, tags, note) }
+    }
+
+    /** Atribuye el evento a un acompañante (null = del usuario). */
+    fun attribute(event: SoundEvent, companionId: Long?) {
+        viewModelScope.launch { repository.attributeEvent(event.id, companionId) }
     }
 
     private val _playingEventId = MutableStateFlow<Long?>(null)

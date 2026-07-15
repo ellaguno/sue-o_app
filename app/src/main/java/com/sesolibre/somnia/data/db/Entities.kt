@@ -72,6 +72,11 @@ data class SoundEvent(
     val clipPath: String? = null,
     /** Reetiquetado manual del usuario; tiene prioridad sobre [category]. */
     val manualLabel: String? = null,
+    /**
+     * Atribución manual: id de [SleepCompanion] si el sonido vino de otra
+     * persona; null = sin atribuir (se asume del usuario).
+     */
+    val attributedToCompanionId: Long? = null,
 ) {
     companion object {
         const val CATEGORY_UNKNOWN = "unknown"

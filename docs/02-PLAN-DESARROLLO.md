@@ -112,9 +112,10 @@ Decisiones clave:
 - **Criterio:** ≥80% de los clips de ronquido franco quedan bien clasificados (validación manual).
 
 ### Etapa 4 — Perfil, acompañantes y bitácora (1 semana)
-- [ ] Perfil de usuario + cuestionarios Epworth / STOP-Bang.
-- [ ] Acompañantes: alta, aviso de consentimiento, disclaimer "los sonidos pueden venir de otras personas" en reportes cuando `duermeSolo=false`, atribución manual de eventos/noches.
-- [ ] Bitácora rápida por noche (chips: cafeína, alcohol, ejercicio…) al iniciar o al despertar.
+- [x] Perfil de usuario + cuestionarios Epworth / STOP-Bang.
+- [x] Acompañantes: alta, aviso de consentimiento, disclaimer "los sonidos pueden venir de otras personas" en reportes cuando `duermeSolo=false`, atribución manual de eventos/noches.
+- [x] Bitácora rápida por noche (chips: cafeína, alcohol, ejercicio…) al iniciar o al despertar.
+- [x] Ajustes: umbral de detección (sensibilidad) configurable para entornos ruidosos (calle, ventilador); default +12 dB, rango 6–20.
 - **Criterio:** reportes reflejan el contexto multi-persona y la bitácora.
 
 ### Etapa 5 — Estadísticas y reportes (1–2 semanas)
@@ -122,6 +123,7 @@ Decisiones clave:
 - [ ] Tendencias: semana/mes, correlaciones simples con bitácora.
 - [ ] "Lo más relevante de anoche" (top clips) + recomendaciones de higiene del sueño basadas en reglas.
 - [ ] Exportar PDF/CSV de una noche o rango.
+- [ ] Discriminar ruido base clasificado (p. ej. ventilador/tráfico → categoría `environment`): agruparlo o excluirlo de los resúmenes para que no tape los ronquidos. (El piso adaptativo del detector ya absorbe ruido constante; esto es la capa de reportes.)
 - **Criterio:** con 2+ semanas de datos, la app cuenta una historia útil y exportable.
 
 ### Etapa 6 — Endurecimiento y release (1 semana)

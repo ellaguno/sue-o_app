@@ -15,9 +15,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -40,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sesolibre.somnia.R
 import com.sesolibre.somnia.audio.DbMeter
 import com.sesolibre.somnia.data.db.SessionWithStats
+import com.sesolibre.somnia.ui.components.NightLogDialog
 import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.ZoneId
@@ -51,10 +57,25 @@ import kotlin.math.roundToInt
 fun HomeScreen(
     onRequestStart: () -> Unit,
     onOpenSession: (Long) -> Unit,
+    onOpenProfile: () -> Unit,
+    onOpenSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val monitor by viewModel.monitor.collectAsStateWithLifecycle()
     val sessions by viewModel.sessions.collectAsStateWithLifecycle()
+    val currentNightLog by viewModel.currentNightLog.collectAsStateWithLifecycle()
+
+    var editingLog by remember { mutableStateOf(false) }
+    if (editingLog) {
+        NightLogDialog(
+            existing = currentNightLog,
+            onSave = { tags, note ->
+                viewModel.saveCurrentNightLog(tags, note)
+                editingLog = false
+            },
+            onDismiss = { editingLog = false },
+        )
+    }
 
     Scaffold { padding ->
         LazyColumn(
@@ -65,16 +86,36 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
-                Column(Modifier.padding(top = 16.dp)) {
-                    Text(
-                        stringResource(R.string.app_name),
-                        style = MaterialTheme.typography.headlineMedium,
-                    )
-                    Text(
-                        stringResource(R.string.home_tagline),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.headlineMedium,
+                        )
+                        Text(
+                            stringResource(R.string.home_tagline),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    IconButton(onClick = onOpenProfile) {
+                        Icon(
+                            Icons.Default.Person,
+                            contentDescription = stringResource(R.string.profile_title),
+                        )
+                    }
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.settings_title),
+                        )
+                    }
                 }
             }
 
@@ -87,6 +128,7 @@ fun HomeScreen(
                     eventsDetected = monitor.eventsDetected,
                     onStart = onRequestStart,
                     onStop = viewModel::stopMonitoring,
+                    onEditNightLog = { editingLog = true },
                 )
             }
 
@@ -119,6 +161,7 @@ private fun MonitorCard(
     eventsDetected: Int,
     onStart: () -> Unit,
     onStop: () -> Unit,
+    onEditNightLog: () -> Unit,
 ) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(
@@ -158,7 +201,12 @@ private fun MonitorCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                OutlinedButton(onClick = onStop) { Text(stringResource(R.string.stop_monitoring)) }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = onStop) { Text(stringResource(R.string.stop_monitoring)) }
+                    TextButton(onClick = onEditNightLog) {
+                        Text(stringResource(R.string.night_log_title))
+                    }
+                }
             } else {
                 Text(
                     stringResource(R.string.monitoring_idle),

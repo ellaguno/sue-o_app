@@ -57,4 +57,84 @@
     <string name="session_delete">Eliminar sesión</string>
 
     <string name="mic_permission_needed">Somnia necesita el micrófono para monitorear tu sueño. Todo se procesa localmente.</string>
+
+    <!-- Ajustes -->
+    <string name="settings_title">Ajustes</string>
+    <string name="sensitivity_title">Sensibilidad de detección</string>
+    <string name="sensitivity_help">Un evento se registra cuando el sonido supera el ruido de fondo por este margen. Si duermes en un lugar ruidoso (calle transitada, ventilador fuerte) y se registran demasiados eventos, sube el valor; si se pierden ronquidos suaves, bájalo. Aplica a partir de la siguiente sesión.</string>
+    <string name="sensitivity_value">+%1$d dB sobre el ruido de fondo</string>
+    <string name="sensitivity_scale_hint">← más sensible (más eventos) · menos sensible (solo sonidos fuertes) →</string>
+    <string name="sensitivity_floor_note">El ruido constante (un ventilador, la calle) se absorbe solo: el detector adapta su nivel de fondo automáticamente.</string>
+    <string name="sensitivity_reset">Restablecer al valor recomendado (+%1$d dB)</string>
+
+    <!-- Perfil -->
+    <string name="profile_title">Perfil</string>
+    <string name="profile_data_title">Tus datos</string>
+    <string name="profile_data_help">Opcionales. Sirven para prellenar el cuestionario STOP-Bang (IMC, edad, cuello, sexo). Nunca salen de tu teléfono.</string>
+    <string name="profile_name">Nombre</string>
+    <string name="profile_birth_year">Año de nacimiento</string>
+    <string name="profile_height_cm">Estatura (cm)</string>
+    <string name="profile_weight_kg">Peso (kg)</string>
+    <string name="profile_neck_cm">Cuello (cm)</string>
+    <string name="profile_sex">Sexo:</string>
+    <string name="profile_sex_female">Femenino</string>
+    <string name="profile_sex_male">Masculino</string>
+    <string name="profile_save">Guardar</string>
+
+    <!-- Acompañantes -->
+    <string name="companions_title">Acompañantes</string>
+    <string name="companions_sleeps_accompanied">Duermo con alguien más en la habitación</string>
+    <string name="companions_help">Los reportes avisarán que los sonidos pueden provenir de otras personas, y podrás atribuir eventos a cada quien.</string>
+    <string name="companions_add">+ Agregar acompañante</string>
+    <string name="companions_add_title">Agregar acompañante</string>
+    <string name="companions_name">Nombre o apodo</string>
+    <string name="companions_consent">Confirmo que avisé a esta persona que Somnia graba sonidos breves mientras dormimos y está de acuerdo.</string>
+    <string name="companions_add_confirm">Agregar</string>
+    <string name="companions_remove">Quitar</string>
+    <string name="multi_person_disclaimer">⚠ Duermes acompañado: los sonidos registrados pueden provenir de otras personas en la habitación.</string>
+
+    <!-- Cuestionarios -->
+    <string name="questionnaires_title">Cuestionarios</string>
+    <string name="questionnaires_disclaimer">Son herramientas de tamizaje, NO un diagnóstico. Comparte los resultados con tu médico.</string>
+    <string name="questionnaire_result_summary">Puntaje %1$d/%2$d · %3$s · %4$s</string>
+    <string name="questionnaire_not_answered">Sin responder</string>
+    <string name="questionnaire_answer">Responder</string>
+    <string name="questionnaire_answer_again">Repetir</string>
+    <string name="questionnaire_submit">Guardar resultado</string>
+
+    <string name="epworth_name">Escala de Epworth (somnolencia)</string>
+    <string name="epworth_intro">¿Qué tan probable es que dormites o te quedes dormido en estas situaciones? Responde pensando en tu vida reciente.</string>
+    <string name="epworth_level_normal">somnolencia normal</string>
+    <string name="epworth_level_mild">promedio alto</string>
+    <string name="epworth_level_moderate">somnolencia excesiva</string>
+    <string name="epworth_level_severe">somnolencia severa</string>
+
+    <string name="stopbang_name">STOP-Bang (riesgo de apnea)</string>
+    <string name="stopbang_intro">Responde sí o no. Los últimos cuatro se llenan solos si completaste tu perfil.</string>
+    <string name="stopbang_level_low">riesgo bajo</string>
+    <string name="stopbang_level_intermediate">riesgo intermedio</string>
+    <string name="stopbang_level_high">riesgo alto</string>
+
+    <!-- Bitácora nocturna -->
+    <string name="night_log_title">Bitácora de la noche</string>
+    <string name="night_log_help">¿Qué hubo hoy? Ayuda a encontrar correlaciones con tu sueño.</string>
+    <string name="night_log_note">Nota (opcional)</string>
+    <string name="night_log_save">Guardar</string>
+    <string name="night_log_empty">Sin bitácora para esta noche.</string>
+    <string name="night_log_add">Agregar bitácora</string>
+    <string name="night_log_edit">Editar</string>
+    <string name="tag_caffeine">Cafeína</string>
+    <string name="tag_alcohol">Alcohol</string>
+    <string name="tag_exercise">Ejercicio</string>
+    <string name="tag_late_dinner">Cena tarde</string>
+    <string name="tag_stress">Estrés</string>
+    <string name="tag_medication">Medicamento</string>
+    <string name="tag_sick">Enfermo</string>
+    <string name="tag_screen_late">Pantallas tarde</string>
+
+    <!-- Atribución de eventos -->
+    <string name="attribution_title">¿De quién fue este sonido?</string>
+    <string name="attribution_me">Mío</string>
+    <string name="attribution_of">de: %1$s</string>
+    <string name="attribution_assign">¿de quién?</string>
 </resources>

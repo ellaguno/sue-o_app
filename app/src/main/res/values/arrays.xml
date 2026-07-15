@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Escala de Somnolencia de Epworth: el orden importa (índices 0–7). -->
+    <string-array name="epworth_questions">
+        <item>Sentado y leyendo</item>
+        <item>Viendo la televisión</item>
+        <item>Sentado, inactivo, en un lugar público (teatro, reunión)</item>
+        <item>Como pasajero en un auto durante una hora sin paradas</item>
+        <item>Acostado descansando por la tarde, si las circunstancias lo permiten</item>
+        <item>Sentado conversando con alguien</item>
+        <item>Sentado tranquilamente después de una comida sin alcohol</item>
+        <item>En un auto, detenido unos minutos por el tráfico</item>
+    </string-array>
+    <!-- Opciones 0–3 en orden. -->
+    <string-array name="epworth_options">
+        <item>Nunca dormitaría (0)</item>
+        <item>Poca probabilidad (1)</item>
+        <item>Probabilidad moderada (2)</item>
+        <item>Alta probabilidad (3)</item>
+    </string-array>
+
+    <!-- STOP-Bang: el orden importa; índices 4–7 (B/A/N/G) se prellenan del perfil. -->
+    <string-array name="stopbang_questions">
+        <item>¿Roncas fuerte (se oye a través de una puerta cerrada)?</item>
+        <item>¿Te sientes cansado o somnoliento durante el día con frecuencia?</item>
+        <item>¿Alguien ha observado que dejas de respirar mientras duermes?</item>
+        <item>¿Tienes o recibes tratamiento para presión arterial alta?</item>
+        <item>¿Tu IMC es mayor a 35?</item>
+        <item>¿Tienes más de 50 años?</item>
+        <item>¿Tu cuello mide más de 40 cm de circunferencia?</item>
+        <item>¿Eres de sexo masculino?</item>
+    </string-array>
+</resources>

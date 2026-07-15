@@ -22,14 +22,17 @@ import com.sesolibre.somnia.audio.AudioEngine
 import com.sesolibre.somnia.audio.AudioPipeline
 import com.sesolibre.somnia.audio.ClipEncoder
 import com.sesolibre.somnia.audio.DbMeter
+import com.sesolibre.somnia.audio.EventDetector
 import com.sesolibre.somnia.audio.NoiseAggregator
 import com.sesolibre.somnia.data.MonitorState
 import com.sesolibre.somnia.data.MonitorStateHolder
 import com.sesolibre.somnia.data.SessionRepository
+import com.sesolibre.somnia.data.prefs.SettingsRepository
 import com.sesolibre.somnia.data.db.SoundEvent
 import com.sesolibre.somnia.ml.YamnetClassifier
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
@@ -46,6 +49,7 @@ class MonitorService : LifecycleService() {
 
     @Inject lateinit var repository: SessionRepository
     @Inject lateinit var stateHolder: MonitorStateHolder
+    @Inject lateinit var settings: SettingsRepository
 
     private var audioEngine: AudioEngine? = null
     private var pipeline: AudioPipeline? = null
@@ -103,7 +107,9 @@ class MonitorService : LifecycleService() {
                     startedAtMs = startMs,
                 )
             }
+            val openMarginDb = settings.openMarginDb.first()
             pipeline = AudioPipeline(
+                detector = EventDetector(EventDetector.Config(openMarginDb = openMarginDb)),
                 onSecondReading = ::onSecondReading,
                 onEventCaptured = ::onEventCaptured,
             )
