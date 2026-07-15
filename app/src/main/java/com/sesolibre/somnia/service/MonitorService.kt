@@ -239,7 +239,9 @@ class MonitorService : LifecycleService() {
         private const val NOTIFICATION_ID = 1
         private const val NOTIFICATION_UPDATE_MS = 30_000L
         private const val MAX_SESSION_MS = 14 * 60 * 60 * 1000L // tope de seguridad: 14 h
-        private const val MAX_CLIPS_PER_SESSION = 200
+        // Un clip Opus de evento pesa ~33 KB (medido en la alfa del 2026-07-14),
+        // así que 1000 clips son ~35 MB por noche como techo.
+        private const val MAX_CLIPS_PER_SESSION = 1000
 
         fun start(context: Context) {
             context.startForegroundService(
