@@ -23,3 +23,6 @@ keystore/
 .DS_Store
 *.log
 .kotlin/
+
+# Claude Code (configuración local y temporales)
+.claude/
