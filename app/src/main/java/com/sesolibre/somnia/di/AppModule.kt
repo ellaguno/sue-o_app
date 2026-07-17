@@ -25,7 +25,11 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): SomniaDatabase =
         Room.databaseBuilder(context, SomniaDatabase::class.java, "somnia.db")
-            .addMigrations(SomniaDatabase.MIGRATION_1_2, SomniaDatabase.MIGRATION_2_3)
+            .addMigrations(
+                SomniaDatabase.MIGRATION_1_2,
+                SomniaDatabase.MIGRATION_2_3,
+                SomniaDatabase.MIGRATION_3_4,
+            )
             .build()
 
     @Provides

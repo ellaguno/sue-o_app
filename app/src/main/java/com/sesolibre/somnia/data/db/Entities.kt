@@ -69,6 +69,12 @@ data class SoundEvent(
     /** Categoría del clasificador (Etapa 3); mientras tanto [CATEGORY_UNKNOWN]. */
     val category: String = CATEGORY_UNKNOWN,
     val confidence: Double? = null,
+    /**
+     * Etiqueta cruda de AudioSet que devolvió YAMNet (p. ej. "Throat clearing"),
+     * antes de mapearla a [category]. Se conserva para poder afinar el
+     * [com.sesolibre.somnia.ml.CategoryMapper] con datos reales sin depender de logcat.
+     */
+    val rawLabel: String? = null,
     val clipPath: String? = null,
     /** Reetiquetado manual del usuario; tiene prioridad sobre [category]. */
     val manualLabel: String? = null,

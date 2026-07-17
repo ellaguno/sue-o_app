@@ -20,8 +20,12 @@ object AudioWindows {
         val result = ArrayList<FloatArray>()
         var start = 0
         while (start < pcm.size && result.size < maxWindows) {
-            val window = FloatArray(windowSize)
             val available = minOf(windowSize, pcm.size - start)
+            // Una ventana de cola mayormente en cero (relleno) hace que YAMNet
+            // prediga "Silence" con alta confianza y contamina la clasificación;
+            // la descartamos salvo que sea la única ventana del evento.
+            if (result.isNotEmpty() && available < windowSize / 2) break
+            val window = FloatArray(windowSize)
             for (i in 0 until available) {
                 window[i] = pcm[start + i] / 32768f
             }

@@ -34,7 +34,7 @@ object CategoryMapper {
         SomniaCategory.MOVEMENT to listOf(
             "rustle", "rustling", "squeak", "creak", "door", "cupboard",
             "drawer", "footsteps", "walk", "thump", "thud", "knock", "tap",
-            "zipper", "velcro",
+            "zipper", "velcro", "cloth", "fabric",
         ),
         SomniaCategory.ENVIRONMENT to listOf(
             "vehicle", "car", "truck", "motorcycle", "traffic", "engine",

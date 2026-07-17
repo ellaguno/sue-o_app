@@ -148,6 +148,7 @@ class MonitorService : LifecycleService() {
                     dbAvg = capture.avgDbfs,
                     category = classification?.category?.key ?: SoundEvent.CATEGORY_UNKNOWN,
                     confidence = classification?.score?.toDouble(),
+                    rawLabel = classification?.label,
                     clipPath = clipPath,
                 )
             )

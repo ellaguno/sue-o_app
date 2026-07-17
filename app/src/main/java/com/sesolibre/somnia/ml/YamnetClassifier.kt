@@ -48,22 +48,27 @@ class YamnetClassifier(context: Context) : AutoCloseable {
         val windows = AudioWindows.windows(pcm)
         if (windows.isEmpty()) return null
 
-        val avgScores = FloatArray(numClasses)
+        // Se toma el máximo por clase entre ventanas, no el promedio: un evento
+        // corto (un ronquido, una tos) suele sonar en una sola ventana, y
+        // promediarlo con las ventanas silenciosas lo diluía por debajo del
+        // umbral y todo terminaba en "Otro".
+        val maxScores = FloatArray(numClasses)
         for (window in windows) {
             val scores = runWindow(window)
-            for (i in avgScores.indices) avgScores[i] += scores[i] / windows.size
+            for (i in maxScores.indices) if (scores[i] > maxScores[i]) maxScores[i] = scores[i]
         }
 
         var topIdx = 0
-        for (i in avgScores.indices) if (avgScores[i] > avgScores[topIdx]) topIdx = i
+        for (i in maxScores.indices) if (maxScores[i] > maxScores[topIdx]) topIdx = i
         val label = labels.getOrElse(topIdx) { "?" }
-        val score = avgScores[topIdx]
+        val score = maxScores[topIdx]
 
         val category = if (score < MIN_CONFIDENCE) {
             SomniaCategory.OTHER
         } else {
             CategoryMapper.fromAudioSetLabel(label)
         }
+        Log.d(TAG, "clasificado '$label' score=${"%.2f".format(score)} -> ${category.key}")
         return Classification(label = label, score = score, category = category)
     }
 

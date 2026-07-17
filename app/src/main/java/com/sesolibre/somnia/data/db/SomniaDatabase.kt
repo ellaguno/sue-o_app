@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         Session::class, NoiseSample::class, SoundEvent::class,
         UserProfile::class, SleepCompanion::class, QuestionnaireResult::class, NightLog::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = false,
 )
 abstract class SomniaDatabase : RoomDatabase() {
@@ -106,6 +106,13 @@ abstract class SomniaDatabase : RoomDatabase() {
                     )
                     """.trimIndent()
                 )
+            }
+        }
+
+        /** v4: label crudo de YAMNet por evento, para afinar el mapeo (Etapa 3). */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `sound_events` ADD COLUMN `rawLabel` TEXT")
             }
         }
     }

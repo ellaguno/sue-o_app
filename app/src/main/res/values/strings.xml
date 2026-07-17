@@ -136,5 +136,5 @@
     <string name="attribution_title">¿De quién fue este sonido?</string>
     <string name="attribution_me">Mío</string>
     <string name="attribution_of">de: %1$s</string>
-    <string name="attribution_assign">¿de quién?</string>
+    <string name="attribution_assign">Quién</string>
 </resources>
