@@ -11,7 +11,10 @@ import com.sesolibre.somnia.data.db.SessionDao
 import com.sesolibre.somnia.data.db.SessionWithStats
 import com.sesolibre.somnia.data.db.SoundEvent
 import com.sesolibre.somnia.data.db.SoundEventDao
+import com.sesolibre.somnia.stats.NightMetrics
+import com.sesolibre.somnia.stats.TrendsAnalyzer
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -52,6 +55,16 @@ class SessionRepository @Inject constructor(
         soundEventDao.clipCountForSession(sessionId)
 
     fun sessionsWithStats(): Flow<List<SessionWithStats>> = sessionDao.sessionsWithStats()
+
+    /** Métricas por noche para Tendencias (combina sesiones, eventos, ruido y bitácora). */
+    fun nightlyMetrics(): Flow<List<NightMetrics>> = combine(
+        sessionDao.observeAll(),
+        soundEventDao.observeAll(),
+        noiseSampleDao.observeAll(),
+        nightLogDao.observeAll(),
+    ) { sessions, events, samples, logs ->
+        TrendsAnalyzer.metrics(sessions, events, samples, logs)
+    }
 
     fun observeSession(sessionId: Long): Flow<Session?> = sessionDao.observeById(sessionId)
 

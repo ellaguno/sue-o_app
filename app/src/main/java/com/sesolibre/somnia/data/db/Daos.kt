@@ -45,6 +45,9 @@ interface SessionDao {
     )
     fun sessionsWithStats(): Flow<List<SessionWithStats>>
 
+    @Query("SELECT * FROM sessions ORDER BY startEpochMs DESC")
+    fun observeAll(): Flow<List<Session>>
+
     @Query("DELETE FROM sessions WHERE id = :id")
     suspend fun delete(id: Long)
 }
@@ -56,6 +59,9 @@ interface NoiseSampleDao {
 
     @Query("SELECT * FROM noise_samples WHERE sessionId = :sessionId ORDER BY minuteIndex")
     fun bySession(sessionId: Long): Flow<List<NoiseSample>>
+
+    @Query("SELECT * FROM noise_samples")
+    fun observeAll(): Flow<List<NoiseSample>>
 }
 
 @Dao
@@ -68,6 +74,9 @@ interface SoundEventDao {
 
     @Query("SELECT * FROM sound_events WHERE sessionId = :sessionId ORDER BY startEpochMs")
     fun bySession(sessionId: Long): Flow<List<SoundEvent>>
+
+    @Query("SELECT * FROM sound_events")
+    fun observeAll(): Flow<List<SoundEvent>>
 
     @Query("SELECT COUNT(*) FROM sound_events WHERE sessionId = :sessionId AND clipPath IS NOT NULL")
     suspend fun clipCountForSession(sessionId: Long): Int

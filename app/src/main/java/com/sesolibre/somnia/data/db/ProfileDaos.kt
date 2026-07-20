@@ -57,6 +57,9 @@ interface NightLogDao {
     @Query("SELECT * FROM night_logs WHERE sessionId = :sessionId")
     fun observe(sessionId: Long): Flow<NightLog?>
 
+    @Query("SELECT * FROM night_logs")
+    fun observeAll(): Flow<List<NightLog>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(log: NightLog)
 }

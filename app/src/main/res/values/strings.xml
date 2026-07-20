@@ -45,6 +45,19 @@
     <string name="night_breakdown_empty">Sin sonidos del cuerpo clasificados esta noche.</string>
     <string name="night_breakdown_environment">Ambiente: %1$d · Otros: %2$d</string>
     <string name="night_chip_count">%1$s · %2$d</string>
+    <string name="trends_title">Tendencias</string>
+    <string name="home_open_trends">Ver tendencias</string>
+    <string name="trends_empty">Aún no hay suficientes noches. Registra varias noches para ver tus tendencias.</string>
+    <string name="trends_overview_title">Resumen</string>
+    <string name="trends_nights">%1$d noches registradas</string>
+    <string name="trends_avg_snoring">Ronquido promedio: %1$s min/noche</string>
+    <string name="trends_avg_body">Sonidos del cuerpo: %1$s por noche</string>
+    <string name="trends_avg_duration">Duración promedio: %1$s</string>
+    <string name="trends_pause_nights">Patrón de pausas en %1$d de %2$d noches</string>
+    <string name="trends_snoring_chart">Minutos roncando por noche</string>
+    <string name="trends_corr_title">Relación con tu bitácora</string>
+    <string name="trends_corr_empty">Registra noches con y sin cada etiqueta para ver correlaciones. No es causa-efecto, solo una pista para explorar.</string>
+    <string name="trends_corr_line">%1$s — con: %2$s min · sin: %3$s min (Δ %4$s)</string>
     <string name="relabel_title">Corregir etiqueta</string>
     <string name="cancel">Cancelar</string>
 

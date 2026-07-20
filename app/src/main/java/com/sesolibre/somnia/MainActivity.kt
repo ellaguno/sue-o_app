@@ -22,6 +22,7 @@ import com.sesolibre.somnia.ui.questionnaires.EpworthScreen
 import com.sesolibre.somnia.ui.questionnaires.StopBangScreen
 import com.sesolibre.somnia.ui.settings.SettingsScreen
 import com.sesolibre.somnia.ui.theme.SomniaTheme
+import com.sesolibre.somnia.ui.trends.TrendsScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -48,6 +49,7 @@ class MainActivity : ComponentActivity() {
                             onOpenSession = { id -> nav.navigate("night/$id") },
                             onOpenProfile = { nav.navigate("profile") },
                             onOpenSettings = { nav.navigate("settings") },
+                            onOpenTrends = { nav.navigate("trends") },
                         )
                     }
                     composable(
@@ -58,6 +60,9 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("settings") {
                         SettingsScreen(onBack = { nav.popBackStack() })
+                    }
+                    composable("trends") {
+                        TrendsScreen(onBack = { nav.popBackStack() })
                     }
                     composable("profile") {
                         ProfileScreen(

@@ -59,6 +59,7 @@ fun HomeScreen(
     onOpenSession: (Long) -> Unit,
     onOpenProfile: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenTrends: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val monitor by viewModel.monitor.collectAsStateWithLifecycle()
@@ -135,6 +136,16 @@ fun HomeScreen(
             item { BatteryOptimizationCard() }
 
             if (sessions.isNotEmpty()) {
+                item {
+                    OutlinedButton(
+                        onClick = onOpenTrends,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                    ) {
+                        Text(stringResource(R.string.home_open_trends))
+                    }
+                }
                 item {
                     Text(
                         stringResource(R.string.sessions_header),
