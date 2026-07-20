@@ -67,6 +67,12 @@
     <string name="transcription_unavailable">Transcripción no disponible en este dispositivo.</string>
     <string name="transcription_failed">No se pudo transcribir.</string>
     <string name="transcription_language_missing">Falta el paquete de idioma para transcribir; se está descargando. Vuelve a intentarlo en un momento (o instálalo en Ajustes de Android → Sistema → Idiomas → Voz).</string>
+    <string name="export_csv">Exportar CSV</string>
+    <string name="export_pdf">Exportar PDF</string>
+    <string name="export_share">Compartir reporte</string>
+    <string name="export_pdf_summary">Resumen</string>
+    <string name="export_pdf_duration">Duración: %1$s · %2$d eventos</string>
+
     <string name="highlights_title">Lo más relevante de la noche</string>
     <string name="highlight_pause_pattern">Ronquido antes de una pausa</string>
     <string name="highlight_loud_snore">Ronquido más fuerte</string>

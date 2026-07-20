@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
@@ -24,6 +25,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -41,6 +43,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sesolibre.somnia.R
@@ -94,8 +97,25 @@ fun NightScreen(
     val transcribeOutcome by viewModel.transcribeOutcome.collectAsStateWithLifecycle()
     val highlights by viewModel.highlights.collectAsStateWithLifecycle()
     val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
+    val shareRequest by viewModel.shareRequest.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
+    LaunchedEffect(shareRequest) {
+        shareRequest?.let { request ->
+            val uri = FileProvider.getUriForFile(
+                context, "${context.packageName}.fileprovider", request.file,
+            )
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = request.mime
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(
+                Intent.createChooser(intent, context.getString(R.string.export_share)),
+            )
+            viewModel.clearShareRequest()
+        }
+    }
     LaunchedEffect(transcribeOutcome) {
         transcribeOutcome?.let { outcome ->
             val msg = when (outcome) {
@@ -351,6 +371,22 @@ fun NightScreen(
                     onAttribute = { attributing = event },
                     onTranscribe = { viewModel.transcribe(event) },
                 )
+            }
+
+            item {
+                Row(
+                    Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = { viewModel.exportCsv() },
+                        modifier = Modifier.weight(1f),
+                    ) { Text(stringResource(R.string.export_csv)) }
+                    OutlinedButton(
+                        onClick = { viewModel.exportPdf() },
+                        modifier = Modifier.weight(1f),
+                    ) { Text(stringResource(R.string.export_pdf)) }
+                }
             }
 
             item {

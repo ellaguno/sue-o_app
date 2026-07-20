@@ -12,6 +12,8 @@ import com.sesolibre.somnia.audio.PcmDecoder
 import com.sesolibre.somnia.data.ProfileRepository
 import com.sesolibre.somnia.data.SessionRepository
 import com.sesolibre.somnia.data.prefs.SettingsRepository
+import com.sesolibre.somnia.export.CsvReport
+import com.sesolibre.somnia.export.PdfReport
 import com.sesolibre.somnia.data.db.NightLog
 import com.sesolibre.somnia.data.db.NightTag
 import com.sesolibre.somnia.data.db.NoiseSample
@@ -45,7 +47,7 @@ import javax.inject.Inject
 @HiltViewModel
 class NightViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    @ApplicationContext appContext: Context,
+    @ApplicationContext private val appContext: Context,
     private val repository: SessionRepository,
     profileRepository: ProfileRepository,
     settings: SettingsRepository,
@@ -82,6 +84,47 @@ class NightViewModel @Inject constructor(
     val highlights: StateFlow<List<Highlight>> = repository.events(sessionId)
         .map { Highlights.topClips(it, ApneaHeuristic.detect(it)) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // --- Exportar la noche (CSV / PDF) ---
+
+    data class ShareRequest(val file: File, val mime: String)
+
+    private val _shareRequest = MutableStateFlow<ShareRequest?>(null)
+    val shareRequest: StateFlow<ShareRequest?> = _shareRequest.asStateFlow()
+
+    fun clearShareRequest() { _shareRequest.value = null }
+
+    private fun exportsDir(): File = File(appContext.cacheDir, "exports").apply { mkdirs() }
+
+    fun exportCsv() {
+        val currentSession = session.value ?: return
+        viewModelScope.launch {
+            val file = withContext(Dispatchers.IO) {
+                File(exportsDir(), "somnia-noche-${currentSession.id}.csv").apply {
+                    writeText(CsvReport.build(currentSession, events.value))
+                }
+            }
+            _shareRequest.value = ShareRequest(file, "text/csv")
+        }
+    }
+
+    fun exportPdf() {
+        val currentSession = session.value ?: return
+        val currentSummary = summary.value ?: return
+        viewModelScope.launch {
+            val file = withContext(Dispatchers.IO) {
+                PdfReport.render(
+                    context = appContext,
+                    outFile = File(exportsDir(), "somnia-noche-${currentSession.id}.pdf"),
+                    session = currentSession,
+                    summary = currentSummary,
+                    highlights = highlights.value,
+                    tips = recommendations.value,
+                )
+            }
+            _shareRequest.value = ShareRequest(file, "application/pdf")
+        }
+    }
 
     /** Reetiquetado manual de un evento (prioridad sobre el clasificador). */
     fun relabel(event: SoundEvent, category: SomniaCategory) {
