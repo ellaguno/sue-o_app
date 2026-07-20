@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import android.content.ClipData
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.material3.AlertDialog
@@ -108,6 +109,8 @@ fun NightScreen(
             val intent = Intent(Intent.ACTION_SEND).apply {
                 type = request.mime
                 putExtra(Intent.EXTRA_STREAM, uri)
+                // ClipData da permiso de lectura también al preview del selector.
+                clipData = ClipData.newUri(context.contentResolver, request.file.name, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             context.startActivity(
