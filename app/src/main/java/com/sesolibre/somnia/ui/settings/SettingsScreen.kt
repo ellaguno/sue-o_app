@@ -1,5 +1,7 @@
 package com.sesolibre.somnia.ui.settings
 
+import android.content.Intent
+import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,6 +26,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -99,6 +102,23 @@ private fun TranscriptionCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            val context = LocalContext.current
+            TextButton(
+                onClick = {
+                    // El paquete de voz on-device se descarga solo al transcribir;
+                    // este atajo lleva a Ajustes de idioma por si se quiere hacer a mano.
+                    val targets = listOf(
+                        Settings.ACTION_LOCALE_SETTINGS,
+                        Settings.ACTION_VOICE_INPUT_SETTINGS,
+                        Settings.ACTION_SETTINGS,
+                    )
+                    targets.firstOrNull { action ->
+                        runCatching { context.startActivity(Intent(action)) }.isSuccess
+                    }
+                },
+            ) {
+                Text(stringResource(R.string.transcription_download_languages))
+            }
         }
     }
 }

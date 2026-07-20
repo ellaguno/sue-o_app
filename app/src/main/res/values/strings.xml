@@ -60,6 +60,7 @@
     <string name="trends_corr_line">%1$s — con: %2$s min · sin: %3$s min (Δ %4$s)</string>
     <string name="transcription_title">Transcribir habla</string>
     <string name="transcription_help">Cuando un evento sea de habla, podrás transcribir lo que se dice. Se hace todo en el teléfono (offline); nada de audio ni texto sale del dispositivo. Requiere Android 13+ y el paquete de idioma instalado.</string>
+    <string name="transcription_download_languages">Descargar idiomas de voz (Ajustes de Android)</string>
     <string name="transcription_action">Transcribir</string>
     <string name="transcription_running">Transcribiendo…</string>
     <string name="transcription_quote">«%1$s»</string>
@@ -67,6 +68,9 @@
     <string name="transcription_unavailable">Transcripción no disponible en este dispositivo.</string>
     <string name="transcription_failed">No se pudo transcribir.</string>
     <string name="transcription_language_missing">Falta el paquete de idioma para transcribir; se está descargando. Vuelve a intentarlo en un momento (o instálalo en Ajustes de Android → Sistema → Idiomas → Voz).</string>
+    <string name="more_options">Más opciones</string>
+    <string name="session_delete_confirm_title">¿Eliminar esta noche?</string>
+    <string name="session_delete_confirm_body">Se borrarán la sesión y sus clips de audio. No se puede deshacer.</string>
     <string name="export_csv">Exportar CSV</string>
     <string name="export_pdf">Exportar PDF</string>
     <string name="export_share">Compartir reporte</string>

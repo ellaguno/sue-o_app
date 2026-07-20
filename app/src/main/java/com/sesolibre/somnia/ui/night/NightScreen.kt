@@ -2,6 +2,7 @@ package com.sesolibre.somnia.ui.night
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -20,13 +21,19 @@ import androidx.compose.foundation.lazy.items
 import android.content.ClipData
 import android.content.Intent
 import android.widget.Toast
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -135,6 +142,27 @@ fun NightScreen(
     var relabeling by remember { mutableStateOf<SoundEvent?>(null) }
     var attributing by remember { mutableStateOf<SoundEvent?>(null) }
     var editingLog by remember { mutableStateOf(false) }
+    var menuExpanded by remember { mutableStateOf(false) }
+    var confirmingDelete by remember { mutableStateOf(false) }
+
+    if (confirmingDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmingDelete = false },
+            title = { Text(stringResource(R.string.session_delete_confirm_title)) },
+            text = { Text(stringResource(R.string.session_delete_confirm_body)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmingDelete = false
+                    viewModel.deleteSession(onDeleted = onBack)
+                }) { Text(stringResource(R.string.session_delete)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmingDelete = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            },
+        )
+    }
 
     val zone = remember { ZoneId.systemDefault() }
     val dateFmt = remember { DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale.getDefault()) }
@@ -186,6 +214,36 @@ fun NightScreen(
                 },
                 navigationIcon = {
                     TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
+                },
+                actions = {
+                    if (session != null) {
+                        Box {
+                            IconButton(onClick = { menuExpanded = true }) {
+                                Icon(
+                                    Icons.Default.MoreVert,
+                                    contentDescription = stringResource(R.string.more_options),
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = menuExpanded,
+                                onDismissRequest = { menuExpanded = false },
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.export_csv)) },
+                                    onClick = { menuExpanded = false; viewModel.exportCsv() },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.export_pdf)) },
+                                    onClick = { menuExpanded = false; viewModel.exportPdf() },
+                                )
+                                HorizontalDivider()
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.session_delete)) },
+                                    onClick = { menuExpanded = false; confirmingDelete = true },
+                                )
+                            }
+                        }
+                    }
                 },
             )
         },
@@ -376,28 +434,7 @@ fun NightScreen(
                 )
             }
 
-            item {
-                Row(
-                    Modifier.fillMaxWidth().padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    OutlinedButton(
-                        onClick = { viewModel.exportCsv() },
-                        modifier = Modifier.weight(1f),
-                    ) { Text(stringResource(R.string.export_csv)) }
-                    OutlinedButton(
-                        onClick = { viewModel.exportPdf() },
-                        modifier = Modifier.weight(1f),
-                    ) { Text(stringResource(R.string.export_pdf)) }
-                }
-            }
-
-            item {
-                TextButton(onClick = { viewModel.deleteSession(onDeleted = onBack) }) {
-                    Text(stringResource(R.string.session_delete))
-                }
-                Spacer(Modifier.height(24.dp))
-            }
+            item { Spacer(Modifier.height(24.dp)) }
         }
     }
 }
