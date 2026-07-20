@@ -48,7 +48,10 @@ import com.sesolibre.somnia.data.db.SleepCompanion
 import com.sesolibre.somnia.data.db.SoundEvent
 import com.sesolibre.somnia.ml.ApneaHeuristic
 import com.sesolibre.somnia.ml.SomniaCategory
+import com.sesolibre.somnia.stats.Highlight
+import com.sesolibre.somnia.stats.HighlightReason
 import com.sesolibre.somnia.stats.NightSummary
+import com.sesolibre.somnia.stats.SleepTip
 import com.sesolibre.somnia.ui.components.NightLogDialog
 import com.sesolibre.somnia.ui.components.NightTimeline
 import com.sesolibre.somnia.ui.components.categoryColor
@@ -89,6 +92,8 @@ fun NightScreen(
     val transcriptionEnabled by viewModel.transcriptionEnabled.collectAsStateWithLifecycle()
     val transcribingId by viewModel.transcribingId.collectAsStateWithLifecycle()
     val transcribeOutcome by viewModel.transcribeOutcome.collectAsStateWithLifecycle()
+    val highlights by viewModel.highlights.collectAsStateWithLifecycle()
+    val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     LaunchedEffect(transcribeOutcome) {
@@ -227,6 +232,21 @@ fun NightScreen(
 
             summary?.let { sum ->
                 item { CategoryBreakdown(sum) }
+            }
+
+            if (highlights.isNotEmpty()) {
+                item {
+                    HighlightsCard(
+                        highlights = highlights,
+                        playingId = playingId,
+                        timeFor = { timeFmt.format(Instant.ofEpochMilli(it).atZone(zone)) },
+                        onTogglePlay = { viewModel.togglePlay(it) },
+                    )
+                }
+            }
+
+            if (recommendations.isNotEmpty()) {
+                item { RecommendationsCard(recommendations) }
             }
 
             if (!sleepsAlone) {
@@ -489,6 +509,92 @@ private fun EventRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun highlightReasonLabel(reason: HighlightReason): String = when (reason) {
+    HighlightReason.PAUSE_PATTERN -> stringResource(R.string.highlight_pause_pattern)
+    HighlightReason.LOUDEST_SNORE -> stringResource(R.string.highlight_loud_snore)
+    HighlightReason.SPEECH -> stringResource(R.string.highlight_speech)
+    HighlightReason.COUGH -> stringResource(R.string.highlight_cough)
+    HighlightReason.LOUDEST -> stringResource(R.string.highlight_loudest)
+}
+
+@Composable
+private fun sleepTipText(tip: SleepTip): String = when (tip) {
+    SleepTip.PAUSE_PATTERN -> stringResource(R.string.tip_pause_pattern)
+    SleepTip.ALCOHOL -> stringResource(R.string.tip_alcohol)
+    SleepTip.REDUCE_SNORING -> stringResource(R.string.tip_reduce_snoring)
+    SleepTip.LATE_DINNER -> stringResource(R.string.tip_late_dinner)
+    SleepTip.CAFFEINE -> stringResource(R.string.tip_caffeine)
+    SleepTip.SCREEN_LATE -> stringResource(R.string.tip_screen_late)
+    SleepTip.STRESS -> stringResource(R.string.tip_stress)
+    SleepTip.SHORT_SLEEP -> stringResource(R.string.tip_short_sleep)
+}
+
+@Composable
+private fun HighlightsCard(
+    highlights: List<Highlight>,
+    playingId: Long?,
+    timeFor: (Long) -> String,
+    onTogglePlay: (SoundEvent) -> Unit,
+) {
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                stringResource(R.string.highlights_title),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            highlights.forEach { highlight ->
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            highlightReasonLabel(highlight.reason),
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Text(
+                            timeFor(highlight.event.startEpochMs),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    FilledTonalButton(onClick = { onTogglePlay(highlight.event) }) {
+                        Text(
+                            if (playingId == highlight.event.id) stringResource(R.string.event_stop)
+                            else stringResource(R.string.event_play),
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecommendationsCard(tips: List<SleepTip>) {
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                stringResource(R.string.recommendations_title),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            tips.forEach { tip ->
+                Text(
+                    stringResource(R.string.recommendation_bullet, sleepTipText(tip)),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            Text(
+                stringResource(R.string.recommendations_disclaimer),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

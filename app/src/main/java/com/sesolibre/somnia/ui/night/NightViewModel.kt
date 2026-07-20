@@ -21,8 +21,12 @@ import com.sesolibre.somnia.data.db.SoundEvent
 import com.sesolibre.somnia.ml.ApneaHeuristic
 import com.sesolibre.somnia.ml.SomniaCategory
 import com.sesolibre.somnia.ml.SpeechTranscriber
+import com.sesolibre.somnia.stats.Highlight
+import com.sesolibre.somnia.stats.Highlights
 import com.sesolibre.somnia.stats.NightAnalyzer
 import com.sesolibre.somnia.stats.NightSummary
+import com.sesolibre.somnia.stats.SleepTip
+import com.sesolibre.somnia.stats.SleepTips
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -74,6 +78,11 @@ class NightViewModel @Inject constructor(
         session?.let { NightAnalyzer.summarize(it, events, samples) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    /** "Lo más relevante": pocos clips destacados para escuchar. */
+    val highlights: StateFlow<List<Highlight>> = repository.events(sessionId)
+        .map { Highlights.topClips(it, ApneaHeuristic.detect(it)) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     /** Reetiquetado manual de un evento (prioridad sobre el clasificador). */
     fun relabel(event: SoundEvent, category: SomniaCategory) {
         viewModelScope.launch {
@@ -91,6 +100,11 @@ class NightViewModel @Inject constructor(
 
     val nightLog: StateFlow<NightLog?> = repository.nightLog(sessionId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    /** Recomendaciones de higiene del sueño (reglas sobre datos + bitácora). */
+    val recommendations: StateFlow<List<SleepTip>> = combine(summary, nightLog) { s, log ->
+        if (s == null) emptyList() else SleepTips.forNight(s, log?.tags ?: emptySet())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveNightLog(tags: Set<NightTag>, note: String?) {
         viewModelScope.launch { repository.saveNightLog(sessionId, tags, note) }

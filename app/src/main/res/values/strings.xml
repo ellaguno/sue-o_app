@@ -67,6 +67,24 @@
     <string name="transcription_unavailable">Transcripción no disponible en este dispositivo.</string>
     <string name="transcription_failed">No se pudo transcribir.</string>
     <string name="transcription_language_missing">Falta el paquete de idioma para transcribir; se está descargando. Vuelve a intentarlo en un momento (o instálalo en Ajustes de Android → Sistema → Idiomas → Voz).</string>
+    <string name="highlights_title">Lo más relevante de la noche</string>
+    <string name="highlight_pause_pattern">Ronquido antes de una pausa</string>
+    <string name="highlight_loud_snore">Ronquido más fuerte</string>
+    <string name="highlight_speech">Habla</string>
+    <string name="highlight_cough">Tos</string>
+    <string name="highlight_loudest">Sonido más fuerte</string>
+
+    <string name="recommendations_title">Recomendaciones</string>
+    <string name="recommendation_bullet">• %1$s</string>
+    <string name="recommendations_disclaimer">Sugerencias generales de higiene del sueño, no un diagnóstico médico.</string>
+    <string name="tip_pause_pattern">Se observaron pausas tras roncar. Si se repite, coméntalo con un médico (podría valer la pena un estudio de sueño).</string>
+    <string name="tip_alcohol">Bebiste alcohol y roncaste bastante: el alcohol relaja las vías respiratorias y suele empeorar el ronquido. Prueba evitarlo antes de dormir.</string>
+    <string name="tip_reduce_snoring">Roncaste bastante esta noche. Dormir de lado y mantener un peso saludable suelen reducir el ronquido.</string>
+    <string name="tip_late_dinner">Cenaste tarde. Cenar 2–3 h antes de acostarte mejora el descanso y reduce el reflujo.</string>
+    <string name="tip_caffeine">Tomaste cafeína. Evítala después del mediodía; puede tardar horas en eliminarse.</string>
+    <string name="tip_screen_late">Usaste pantallas antes de dormir. La luz azul retrasa el sueño; intenta apagarlas 30–60 min antes.</string>
+    <string name="tip_stress">Reportaste estrés. Una rutina de relajación (respiración, lectura) antes de acostarte puede ayudar.</string>
+    <string name="tip_short_sleep">Dormiste menos de 6 h. Procura una ventana de sueño más larga y horarios regulares.</string>
     <string name="relabel_title">Corregir etiqueta</string>
     <string name="cancel">Cancelar</string>
 
