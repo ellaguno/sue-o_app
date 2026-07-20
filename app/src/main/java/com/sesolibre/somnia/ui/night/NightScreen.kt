@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.ui.night
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
@@ -38,8 +41,10 @@ import com.sesolibre.somnia.data.db.SleepCompanion
 import com.sesolibre.somnia.data.db.SoundEvent
 import com.sesolibre.somnia.ml.ApneaHeuristic
 import com.sesolibre.somnia.ml.SomniaCategory
+import com.sesolibre.somnia.stats.NightSummary
 import com.sesolibre.somnia.ui.components.NightLogDialog
-import com.sesolibre.somnia.ui.components.NoiseSparkline
+import com.sesolibre.somnia.ui.components.NightTimeline
+import com.sesolibre.somnia.ui.components.categoryColor
 import com.sesolibre.somnia.ui.components.nightTagLabel
 import java.time.Instant
 import java.time.ZoneId
@@ -70,6 +75,7 @@ fun NightScreen(
     val events by viewModel.events.collectAsStateWithLifecycle()
     val playingId by viewModel.playingEventId.collectAsStateWithLifecycle()
     val pausePatterns by viewModel.pausePatternCount.collectAsStateWithLifecycle()
+    val summary by viewModel.summary.collectAsStateWithLifecycle()
     val companions by viewModel.companions.collectAsStateWithLifecycle()
     val sleepsAlone by viewModel.sleepsAlone.collectAsStateWithLifecycle()
     val nightLog by viewModel.nightLog.collectAsStateWithLifecycle()
@@ -143,7 +149,8 @@ fun NightScreen(
             item {
                 Card {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        val durationMin = s.endEpochMs?.let { (it - s.startEpochMs) / 60_000 }
+                        val durationMin = summary?.durationMinutes
+                            ?: s.endEpochMs?.let { (it - s.startEpochMs) / 60_000 }
                         Text(
                             stringResource(
                                 R.string.night_summary,
@@ -153,20 +160,25 @@ fun NightScreen(
                             ),
                             style = MaterialTheme.typography.bodyMedium,
                         )
-                        val snores = events.filter {
-                            ApneaHeuristic.effectiveCategory(it) == SomniaCategory.SNORING.key
-                        }
-                        if (snores.isNotEmpty()) {
-                            val snoreMin = snores.sumOf { it.durationMs } / 60_000.0
-                            Text(
-                                stringResource(
-                                    R.string.night_snore_summary,
-                                    snores.size,
-                                    "%.1f".format(snoreMin),
-                                ),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
+                        summary?.let { sum ->
+                            if (sum.snoringEpisodes > 0) {
+                                Text(
+                                    stringResource(
+                                        R.string.night_snore_summary,
+                                        sum.snoringEpisodes,
+                                        "%.1f".format(sum.snoringMinutes),
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                            sum.peakDb?.let { peak ->
+                                Text(
+                                    stringResource(R.string.night_peak, peak),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                         if (s.batteryStartPct != null && s.batteryEndPct != null) {
                             Text(
@@ -178,9 +190,19 @@ fun NightScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        NoiseSparkline(samples, calibrationOffset = s.calibrationDbOffset)
+                        NightTimeline(
+                            samples = samples,
+                            events = events,
+                            startEpochMs = s.startEpochMs,
+                            endEpochMs = s.endEpochMs,
+                            calibrationOffset = s.calibrationDbOffset,
+                        )
                     }
                 }
+            }
+
+            summary?.let { sum ->
+                item { CategoryBreakdown(sum) }
             }
 
             if (!sleepsAlone) {
@@ -288,6 +310,63 @@ fun NightScreen(
                     Text(stringResource(R.string.session_delete))
                 }
                 Spacer(Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun CategoryBreakdown(summary: NightSummary) {
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                stringResource(R.string.night_breakdown_title),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            if (summary.bodyEventCount == 0) {
+                Text(
+                    stringResource(R.string.night_breakdown_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    NightSummary.BODY_CATEGORIES.forEach { category ->
+                        val n = summary.count(category)
+                        if (n > 0) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Spacer(
+                                    Modifier
+                                        .size(10.dp)
+                                        .background(categoryColor(category), CircleShape),
+                                )
+                                Text(
+                                    stringResource(
+                                        R.string.night_chip_count,
+                                        categoryLabel(category.key),
+                                        n,
+                                    ),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            if (summary.environmentCount > 0 || summary.otherCount > 0) {
+                Text(
+                    stringResource(
+                        R.string.night_breakdown_environment,
+                        summary.environmentCount,
+                        summary.otherCount,
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

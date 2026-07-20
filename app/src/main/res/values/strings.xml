@@ -40,6 +40,11 @@
     <string name="cat_unknown">Sin clasificar</string>
 
     <string name="night_snore_summary">Ronquidos: %1$d eventos · %2$s min</string>
+    <string name="night_peak">Pico de ruido: ~%1$d dB</string>
+    <string name="night_breakdown_title">Sonidos del cuerpo</string>
+    <string name="night_breakdown_empty">Sin sonidos del cuerpo clasificados esta noche.</string>
+    <string name="night_breakdown_environment">Ambiente: %1$d · Otros: %2$d</string>
+    <string name="night_chip_count">%1$s · %2$d</string>
     <string name="relabel_title">Corregir etiqueta</string>
     <string name="cancel">Cancelar</string>
 
