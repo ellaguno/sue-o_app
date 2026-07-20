@@ -44,7 +44,9 @@ class SpeechTranscriber(private val context: Context) {
     /** Transcribe [pcm] (16-bit mono a [sampleRate]); main-safe. */
     suspend fun transcribe(pcm: ShortArray, sampleRate: Int): Result {
         if (!isAvailable() || pcm.isEmpty()) return Result.Unavailable
-        val pcmFile = writePcm(pcm) ?: return Result.Failed(-1)
+        // Los clips se graban muy bajos (~-45 dBFS); sin amplificar, el
+        // reconocedor no encuentra habla. Normalizamos el pico antes de pasarlo.
+        val pcmFile = writePcm(normalize(pcm)) ?: return Result.Failed(-1)
         return try {
             val result = withContext(Dispatchers.Main) { recognize(pcmFile, sampleRate) }
             if (result is Result.LanguageMissing) {
@@ -69,6 +71,20 @@ class SpeechTranscriber(private val context: Context) {
             }
             recognizer.triggerModelDownload(intent)
         }.onFailure { Log.w(TAG, "no se pudo disparar la descarga de idioma", it) }
+    }
+
+    /** Amplifica el PCM para que el pico quede cerca de escala completa (~-1 dBFS). */
+    private fun normalize(pcm: ShortArray): ShortArray {
+        var peak = 0
+        for (sample in pcm) {
+            val abs = kotlin.math.abs(sample.toInt())
+            if (abs > peak) peak = abs
+        }
+        if (peak == 0 || peak >= TARGET_PEAK) return pcm
+        val gain = TARGET_PEAK.toDouble() / peak
+        return ShortArray(pcm.size) {
+            (pcm[it] * gain).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
+        }
     }
 
     private fun writePcm(pcm: ShortArray): File? = runCatching {
@@ -145,5 +161,7 @@ class SpeechTranscriber(private val context: Context) {
 
     private companion object {
         const val TAG = "SpeechTranscriber"
+        /** ~0.9 × 32767: pico objetivo tras normalizar, con algo de headroom. */
+        const val TARGET_PEAK = 29491
     }
 }
