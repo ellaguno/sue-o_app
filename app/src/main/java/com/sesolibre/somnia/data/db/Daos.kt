@@ -84,6 +84,9 @@ interface SoundEventDao {
     @Query("UPDATE sound_events SET attributedToCompanionId = :companionId WHERE id = :eventId")
     suspend fun setAttribution(eventId: Long, companionId: Long?)
 
+    @Query("UPDATE sound_events SET transcript = :transcript WHERE id = :eventId")
+    suspend fun setTranscript(eventId: Long, transcript: String?)
+
     /** Eventos con clip cuya sesión empezó antes del corte (para retención). */
     @Query(
         """

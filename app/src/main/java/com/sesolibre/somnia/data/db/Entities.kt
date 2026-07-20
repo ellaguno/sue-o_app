@@ -76,6 +76,11 @@ data class SoundEvent(
      */
     val rawLabel: String? = null,
     val clipPath: String? = null,
+    /**
+     * Transcripción del habla (categoría `speech`), obtenida on-device con
+     * SpeechRecognizer a petición del usuario. null = no transcrito.
+     */
+    val transcript: String? = null,
     /** Reetiquetado manual del usuario; tiene prioridad sobre [category]. */
     val manualLabel: String? = null,
     /**

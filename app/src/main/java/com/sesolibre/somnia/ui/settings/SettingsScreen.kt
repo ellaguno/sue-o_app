@@ -11,11 +11,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -36,6 +39,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val savedMargin by viewModel.openMarginDb.collectAsStateWithLifecycle()
+    val transcribeSpeech by viewModel.transcribeSpeech.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -58,6 +62,42 @@ fun SettingsScreen(
                 savedMargin = savedMargin,
                 onSave = viewModel::setOpenMarginDb,
                 onReset = viewModel::resetOpenMarginDb,
+            )
+            TranscriptionCard(
+                enabled = transcribeSpeech,
+                onToggle = viewModel::setTranscribeSpeech,
+            )
+        }
+    }
+}
+
+@Composable
+private fun TranscriptionCard(
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Card {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.transcription_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Switch(checked = enabled, onCheckedChange = onToggle)
+            }
+            Text(
+                stringResource(R.string.transcription_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

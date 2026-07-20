@@ -27,4 +27,11 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun resetOpenMarginDb() = setOpenMarginDb(SettingsRepository.DEFAULT_OPEN_MARGIN_DB)
+
+    val transcribeSpeech: StateFlow<Boolean> = settings.transcribeSpeech
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    fun setTranscribeSpeech(enabled: Boolean) {
+        viewModelScope.launch { settings.setTranscribeSpeech(enabled) }
+    }
 }

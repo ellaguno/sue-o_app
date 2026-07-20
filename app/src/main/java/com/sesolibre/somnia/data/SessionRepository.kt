@@ -76,6 +76,10 @@ class SessionRepository @Inject constructor(
     suspend fun attributeEvent(eventId: Long, companionId: Long?) =
         soundEventDao.setAttribution(eventId, companionId)
 
+    /** Guarda (o borra, con null) la transcripción del habla de un evento. */
+    suspend fun saveTranscript(eventId: Long, transcript: String?) =
+        soundEventDao.setTranscript(eventId, transcript)
+
     fun nightLog(sessionId: Long): Flow<NightLog?> = nightLogDao.observe(sessionId)
 
     suspend fun saveNightLog(sessionId: Long, tags: Collection<NightTag>, note: String?) {

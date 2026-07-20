@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.ui.night
 
+import android.content.Context
 import android.media.MediaPlayer
 import android.media.audiofx.LoudnessEnhancer
 import android.util.Log
@@ -7,8 +8,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sesolibre.somnia.audio.ClipPlaybackGain
+import com.sesolibre.somnia.audio.PcmDecoder
 import com.sesolibre.somnia.data.ProfileRepository
 import com.sesolibre.somnia.data.SessionRepository
+import com.sesolibre.somnia.data.prefs.SettingsRepository
 import com.sesolibre.somnia.data.db.NightLog
 import com.sesolibre.somnia.data.db.NightTag
 import com.sesolibre.somnia.data.db.NoiseSample
@@ -17,9 +20,12 @@ import com.sesolibre.somnia.data.db.SleepCompanion
 import com.sesolibre.somnia.data.db.SoundEvent
 import com.sesolibre.somnia.ml.ApneaHeuristic
 import com.sesolibre.somnia.ml.SomniaCategory
+import com.sesolibre.somnia.ml.SpeechTranscriber
 import com.sesolibre.somnia.stats.NightAnalyzer
 import com.sesolibre.somnia.stats.NightSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,17 +34,22 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
 class NightViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
+    @ApplicationContext appContext: Context,
     private val repository: SessionRepository,
     profileRepository: ProfileRepository,
+    settings: SettingsRepository,
 ) : ViewModel() {
 
     private val sessionId: Long = checkNotNull(savedStateHandle["sessionId"])
+
+    private val transcriber = SpeechTranscriber(appContext)
 
     val session: StateFlow<Session?> = repository.observeSession(sessionId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
@@ -88,6 +99,47 @@ class NightViewModel @Inject constructor(
     /** Atribuye el evento a un acompañante (null = del usuario). */
     fun attribute(event: SoundEvent, companionId: Long?) {
         viewModelScope.launch { repository.attributeEvent(event.id, companionId) }
+    }
+
+    // --- Transcripción de habla (opt-in, on-device) ---
+
+    /** Si la transcripción está habilitada en Ajustes y disponible en el equipo. */
+    val transcriptionEnabled: StateFlow<Boolean> = settings.transcribeSpeech
+        .map { it && transcriber.isAvailable() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /** Evento que se está transcribiendo (para el spinner); null si ninguno. */
+    private val _transcribingId = MutableStateFlow<Long?>(null)
+    val transcribingId: StateFlow<Long?> = _transcribingId.asStateFlow()
+
+    enum class TranscribeOutcome { EMPTY, FAILED, UNAVAILABLE, LANGUAGE_MISSING }
+
+    /** Resultado no-texto del último intento (para avisar al usuario); se limpia al mostrarlo. */
+    private val _transcribeOutcome = MutableStateFlow<TranscribeOutcome?>(null)
+    val transcribeOutcome: StateFlow<TranscribeOutcome?> = _transcribeOutcome.asStateFlow()
+
+    fun clearTranscribeOutcome() { _transcribeOutcome.value = null }
+
+    fun transcribe(event: SoundEvent) {
+        val path = event.clipPath ?: return
+        if (_transcribingId.value != null) return
+        _transcribingId.value = event.id
+        viewModelScope.launch {
+            val decoded = withContext(Dispatchers.IO) { PcmDecoder.decode(File(path)) }
+            val result = if (decoded == null) {
+                SpeechTranscriber.Result.Failed(-1)
+            } else {
+                transcriber.transcribe(decoded.pcm, decoded.sampleRate)
+            }
+            when (result) {
+                is SpeechTranscriber.Result.Text -> repository.saveTranscript(event.id, result.value)
+                SpeechTranscriber.Result.Empty -> _transcribeOutcome.value = TranscribeOutcome.EMPTY
+                SpeechTranscriber.Result.Unavailable -> _transcribeOutcome.value = TranscribeOutcome.UNAVAILABLE
+                SpeechTranscriber.Result.LanguageMissing -> _transcribeOutcome.value = TranscribeOutcome.LANGUAGE_MISSING
+                is SpeechTranscriber.Result.Failed -> _transcribeOutcome.value = TranscribeOutcome.FAILED
+            }
+            _transcribingId.value = null
+        }
     }
 
     private val _playingEventId = MutableStateFlow<Long?>(null)

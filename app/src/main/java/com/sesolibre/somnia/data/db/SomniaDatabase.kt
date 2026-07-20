@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         Session::class, NoiseSample::class, SoundEvent::class,
         UserProfile::class, SleepCompanion::class, QuestionnaireResult::class, NightLog::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = false,
 )
 abstract class SomniaDatabase : RoomDatabase() {
@@ -113,6 +113,13 @@ abstract class SomniaDatabase : RoomDatabase() {
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `sound_events` ADD COLUMN `rawLabel` TEXT")
+            }
+        }
+
+        /** v5: transcripción del habla por evento (Etapa 5). */
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE `sound_events` ADD COLUMN `transcript` TEXT")
             }
         }
     }

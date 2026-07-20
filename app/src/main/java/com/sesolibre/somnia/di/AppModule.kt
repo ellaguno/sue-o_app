@@ -29,6 +29,7 @@ object AppModule {
                 SomniaDatabase.MIGRATION_1_2,
                 SomniaDatabase.MIGRATION_2_3,
                 SomniaDatabase.MIGRATION_3_4,
+                SomniaDatabase.MIGRATION_4_5,
             )
             .build()
 
