@@ -10,6 +10,8 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
+import androidx.annotation.ChecksSdkIntAtLeast
+import androidx.annotation.RequiresApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -37,6 +39,7 @@ class SpeechTranscriber(private val context: Context) {
         data class Failed(val errorCode: Int) : Result
     }
 
+    @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.TIRAMISU)
     fun isAvailable(): Boolean =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             SpeechRecognizer.isOnDeviceRecognitionAvailable(context)
@@ -62,6 +65,7 @@ class SpeechTranscriber(private val context: Context) {
      * Pide a los Servicios de Voz que descarguen el paquete de idioma on-device
      * que falta, para que un intento posterior sí funcione. Best-effort.
      */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun triggerLanguageDownload() {
         runCatching {
             val recognizer = SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
@@ -95,6 +99,7 @@ class SpeechTranscriber(private val context: Context) {
         file
     }.getOrNull()
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private suspend fun recognize(pcmFile: File, sampleRate: Int): Result =
         suspendCancellableCoroutine { cont ->
             val recognizer = SpeechRecognizer.createOnDeviceSpeechRecognizer(context)
