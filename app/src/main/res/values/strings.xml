@@ -55,6 +55,15 @@
     <string name="trends_avg_duration">Duración promedio: %1$s</string>
     <string name="trends_pause_nights">Patrón de pausas en %1$d de %2$d noches</string>
     <string name="trends_snoring_chart">Minutos roncando por noche</string>
+    <string name="trends_chart_caption">Cada barra es una noche (de la más antigua a la más reciente); la altura son los minutos roncando. La fecha va debajo de cada barra.</string>
+    <string name="trends_bar_date_format">d/M</string>
+    <string name="trends_breakdown_title">Suma por noche</string>
+    <string name="trends_breakdown_help">Cuántos eventos de cada tipo se registraron en cada noche.</string>
+    <string name="trends_breakdown_row_date">%1$s</string>
+    <string name="trends_count_snoring">#ronquidos %1$d</string>
+    <string name="trends_count_cough">#tos %1$d</string>
+    <string name="trends_count_speech">#hablar %1$d</string>
+    <string name="trends_count_other">#otros %1$d</string>
     <string name="trends_corr_title">Relación con tu bitácora</string>
     <string name="trends_corr_empty">Registra noches con y sin cada etiqueta para ver correlaciones. No es causa-efecto, solo una pista para explorar.</string>
     <string name="trends_corr_line">%1$s — con: %2$s min · sin: %3$s min (Δ %4$s)</string>

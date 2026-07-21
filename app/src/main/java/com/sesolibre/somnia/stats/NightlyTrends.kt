@@ -5,6 +5,7 @@ import com.sesolibre.somnia.data.db.NightTag
 import com.sesolibre.somnia.data.db.NoiseSample
 import com.sesolibre.somnia.data.db.Session
 import com.sesolibre.somnia.data.db.SoundEvent
+import com.sesolibre.somnia.ml.SomniaCategory
 
 /** Métricas de una noche para las gráficas de tendencias. */
 data class NightMetrics(
@@ -17,6 +18,14 @@ data class NightMetrics(
     val pausePatternCount: Int,
     val peakDb: Int?,
     val tags: Set<NightTag>,
+    /** Total de eventos de sonido registrados esa noche. */
+    val totalEvents: Int,
+    /** Conteos por categoría para la suma por noche en Tendencias. */
+    val snoringCount: Int,
+    val coughCount: Int,
+    val speechCount: Int,
+    /** Todo lo que no es ronquido/tos/habla (respiración, movimiento, ambiente, otros, sin clasificar). */
+    val otherCount: Int,
 )
 
 /** Promedios sobre el conjunto de noches (encabezado de Tendencias). */
@@ -73,6 +82,9 @@ object TrendsAnalyzer {
                     events = eventsBySession[session.id].orEmpty(),
                     samples = samplesBySession[session.id].orEmpty(),
                 )
+                val snoringCount = summary.count(SomniaCategory.SNORING)
+                val coughCount = summary.count(SomniaCategory.COUGH)
+                val speechCount = summary.count(SomniaCategory.SPEECH)
                 NightMetrics(
                     sessionId = session.id,
                     startEpochMs = session.startEpochMs,
@@ -83,6 +95,12 @@ object TrendsAnalyzer {
                     pausePatternCount = summary.pausePatternCount,
                     peakDb = summary.peakDb,
                     tags = tagsBySession[session.id].orEmpty(),
+                    totalEvents = summary.totalEvents,
+                    snoringCount = snoringCount,
+                    coughCount = coughCount,
+                    speechCount = speechCount,
+                    otherCount = (summary.totalEvents - snoringCount - coughCount - speechCount)
+                        .coerceAtLeast(0),
                 )
             }
             .sortedBy { it.startEpochMs } // cronológico: izquierda→derecha en la gráfica
