@@ -2,14 +2,20 @@ name: Release AAB
 
 # Se dispara al publicar un tag de versión, p. ej.:
 #   git tag v0.1.0 && git push origin v0.1.0
+# También se puede lanzar a mano desde la pestaña Actions (workflow_dispatch).
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 jobs:
   bundle:
     runs-on: ubuntu-latest
+    env:
+      # Si el secret no está configurado, queda vacío y el paso de publicar
+      # a Play se salta (el workflow sigue generando el AAB igualmente).
+      PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
     steps:
       - uses: actions/checkout@v4
 
@@ -67,3 +73,16 @@ jobs:
           name: somnia-release-aab-${{ github.ref_name }}
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
+
+      # Publica el AAB en Play (pista interna, como borrador para revisar).
+      # Se salta solo si aún no existe el secret PLAY_SERVICE_ACCOUNT_JSON.
+      - name: Publicar en Play (pista interna)
+        if: ${{ env.PLAY_JSON != '' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ env.PLAY_JSON }}
+          packageName: com.sesolibre.somnia
+          releaseFiles: app/build/outputs/bundle/release/app-release.aab
+          mappingFile: app/build/outputs/mapping/release/mapping.txt
+          track: internal
+          status: draft
