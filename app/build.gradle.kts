@@ -13,6 +13,13 @@ val keystoreProps = Properties().apply {
     if (f.exists()) f.inputStream().use { load(it) }
 }
 
+// versionCode: en CI lo fija el workflow (env VERSION_CODE, derivado de
+// github.run_number) para que cada AAB subido a Play sea único y creciente.
+// En builds locales cae al valor por defecto.
+val ciVersionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1
+// versionName: manual y semántico (se sube a mano antes de etiquetar un release).
+val appVersionName = "0.1.0"
+
 android {
     namespace = "com.sesolibre.somnia"
     compileSdk = 36
@@ -21,8 +28,8 @@ android {
         applicationId = "com.sesolibre.somnia"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = ciVersionCode
+        versionName = appVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
