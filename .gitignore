@@ -26,3 +26,9 @@ keystore/
 
 # Claude Code (configuración local y temporales)
 .claude/
+
+# Material de marketing y borradores (no van al repo)
+assets/fondo.png
+assets/sesolibre_somnia.jpg
+assets/somnia_feature_graphic_1024x500.png
+docs/blog-lanzamiento-somnia.md
