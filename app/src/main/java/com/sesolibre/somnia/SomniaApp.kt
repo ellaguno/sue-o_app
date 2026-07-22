@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import com.sesolibre.somnia.data.SessionRepository
+import com.sesolibre.somnia.schedule.SleepScheduler
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,6 +16,7 @@ import javax.inject.Inject
 class SomniaApp : Application() {
 
     @Inject lateinit var repository: SessionRepository
+    @Inject lateinit var sleepScheduler: SleepScheduler
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -22,6 +24,8 @@ class SomniaApp : Application() {
         super.onCreate()
         createNotificationChannel()
         pruneOldClips()
+        // Re-arma el horario de sueño por si el proceso se recreó o cambió la config.
+        appScope.launch { runCatching { sleepScheduler.sync() } }
     }
 
     /** Retención: borra el audio (no los metadatos) de clips viejos. */

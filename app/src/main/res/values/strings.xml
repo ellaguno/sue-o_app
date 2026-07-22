@@ -45,6 +45,9 @@
     <string name="night_breakdown_empty">Sin sonidos del cuerpo clasificados esta noche.</string>
     <string name="night_breakdown_environment">Ambiente: %1$d · Otros: %2$d</string>
     <string name="night_chip_count">%1$s · %2$d</string>
+    <string name="night_breakdown_filter_hint">Toca una categoría para ver solo esos eventos en la lista.</string>
+    <string name="events_header_filtered">Eventos: %1$s (%2$d de %3$d)</string>
+    <string name="events_filter_clear">Ver todos</string>
     <string name="trends_title">Tendencias</string>
     <string name="home_open_trends">Ver tendencias</string>
     <string name="trends_empty">Aún no hay suficientes noches. Registra varias noches para ver tus tendencias.</string>
@@ -59,6 +62,8 @@
     <string name="trends_bar_date_format">d/M</string>
     <string name="trends_breakdown_title">Suma por noche</string>
     <string name="trends_breakdown_help">Cuántos eventos de cada tipo se registraron en cada noche.</string>
+    <string name="trends_total_label">Total (%1$d noches)</string>
+    <string name="trends_total_snoring_min">%1$s min roncando</string>
     <string name="trends_breakdown_row_date">%1$s</string>
     <string name="trends_count_snoring">#ronquidos %1$d</string>
     <string name="trends_count_cough">#tos %1$d</string>
@@ -85,6 +90,10 @@
     <string name="export_share">Compartir reporte</string>
     <string name="export_pdf_summary">Resumen</string>
     <string name="export_pdf_duration">Duración: %1$s · %2$d eventos</string>
+    <string name="export_col_date">Fecha</string>
+    <string name="export_col_snoring_min">Min ronq.</string>
+    <string name="export_col_events">Eventos</string>
+    <string name="export_totals">Totales</string>
 
     <string name="highlights_title">Lo más relevante de la noche</string>
     <string name="highlight_pause_pattern">Ronquido antes de una pausa</string>
@@ -130,6 +139,21 @@
     <string name="sensitivity_scale_hint">← más sensible (más eventos) · menos sensible (solo sonidos fuertes) →</string>
     <string name="sensitivity_floor_note">El ruido constante (un ventilador, la calle) se absorbe solo: el detector adapta su nivel de fondo automáticamente.</string>
     <string name="sensitivity_reset">Restablecer al valor recomendado (+%1$d dB)</string>
+
+    <!-- Horario de sueño -->
+    <string name="schedule_title">Horario de sueño</string>
+    <string name="schedule_help">Detén —y si quieres, inicia— el monitoreo automáticamente a tus horas habituales.</string>
+    <string name="schedule_enable">Programar horario</string>
+    <string name="schedule_bedtime">Hora de dormir</string>
+    <string name="schedule_wake">Hora de despertar</string>
+    <string name="schedule_time_value">%1$02d:%2$02d</string>
+    <string name="schedule_stop_note">El monitoreo se detiene solo cerca de tu hora de despertar (puede variar unos minutos para cuidar la batería). Si olvidas detenerlo, se cierra por ti.</string>
+    <string name="schedule_autostart">Iniciar monitoreo automáticamente</string>
+    <string name="schedule_autostart_help">Requiere haber concedido el permiso de micrófono al menos una vez. En algunos teléfonos el inicio puede tardar unos minutos.</string>
+    <string name="schedule_alt_toggle">Horario distinto ciertos días</string>
+    <string name="schedule_alt_help">Elige los días con otro horario (por ejemplo, el fin de semana). Cada día se refiere a la noche que empieza ese día: la noche del viernes termina el sábado por la mañana.</string>
+    <string name="schedule_alt_wake">Despertar (esos días)</string>
+    <string name="schedule_alt_bedtime">Dormir (esos días)</string>
 
     <!-- Perfil -->
     <string name="profile_title">Perfil</string>

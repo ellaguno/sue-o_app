@@ -1,15 +1,20 @@
 package com.sesolibre.somnia.ui.settings
 
+import android.app.TimePickerDialog
 import android.content.Intent
 import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -33,6 +38,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sesolibre.somnia.R
 import com.sesolibre.somnia.data.prefs.SettingsRepository
+import java.time.DayOfWeek
+import java.time.format.TextStyle
+import java.util.Locale
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +51,14 @@ fun SettingsScreen(
 ) {
     val savedMargin by viewModel.openMarginDb.collectAsStateWithLifecycle()
     val transcribeSpeech by viewModel.transcribeSpeech.collectAsStateWithLifecycle()
+    val scheduleEnabled by viewModel.scheduleEnabled.collectAsStateWithLifecycle()
+    val scheduleAutoStart by viewModel.scheduleAutoStart.collectAsStateWithLifecycle()
+    val bedtimeMinutes by viewModel.bedtimeMinutes.collectAsStateWithLifecycle()
+    val wakeMinutes by viewModel.wakeMinutes.collectAsStateWithLifecycle()
+    val altEnabled by viewModel.scheduleAltEnabled.collectAsStateWithLifecycle()
+    val altDays by viewModel.scheduleAltDays.collectAsStateWithLifecycle()
+    val altBedtimeMinutes by viewModel.altBedtimeMinutes.collectAsStateWithLifecycle()
+    val altWakeMinutes by viewModel.altWakeMinutes.collectAsStateWithLifecycle()
 
     Scaffold(
         topBar = {
@@ -61,6 +77,24 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            ScheduleCard(
+                enabled = scheduleEnabled,
+                autoStart = scheduleAutoStart,
+                bedtimeMinutes = bedtimeMinutes,
+                wakeMinutes = wakeMinutes,
+                altEnabled = altEnabled,
+                altDays = altDays,
+                altBedtimeMinutes = altBedtimeMinutes,
+                altWakeMinutes = altWakeMinutes,
+                onToggleEnabled = viewModel::setScheduleEnabled,
+                onToggleAutoStart = viewModel::setScheduleAutoStart,
+                onSetBedtime = viewModel::setBedtime,
+                onSetWake = viewModel::setWake,
+                onToggleAltEnabled = viewModel::setScheduleAltEnabled,
+                onToggleAltDay = viewModel::toggleAltDay,
+                onSetAltBedtime = viewModel::setAltBedtime,
+                onSetAltWake = viewModel::setAltWake,
+            )
             SensitivityCard(
                 savedMargin = savedMargin,
                 onSave = viewModel::setOpenMarginDb,
@@ -69,6 +103,172 @@ fun SettingsScreen(
             TranscriptionCard(
                 enabled = transcribeSpeech,
                 onToggle = viewModel::setTranscribeSpeech,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ScheduleCard(
+    enabled: Boolean,
+    autoStart: Boolean,
+    bedtimeMinutes: Int,
+    wakeMinutes: Int,
+    altEnabled: Boolean,
+    altDays: Set<Int>,
+    altBedtimeMinutes: Int,
+    altWakeMinutes: Int,
+    onToggleEnabled: (Boolean) -> Unit,
+    onToggleAutoStart: (Boolean) -> Unit,
+    onSetBedtime: (Int) -> Unit,
+    onSetWake: (Int) -> Unit,
+    onToggleAltEnabled: (Boolean) -> Unit,
+    onToggleAltDay: (Int) -> Unit,
+    onSetAltBedtime: (Int) -> Unit,
+    onSetAltWake: (Int) -> Unit,
+) {
+    Card {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.schedule_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Switch(checked = enabled, onCheckedChange = onToggleEnabled)
+            }
+            Text(
+                stringResource(R.string.schedule_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            if (enabled) {
+                TimeRow(
+                    label = stringResource(R.string.schedule_wake),
+                    minutes = wakeMinutes,
+                    onPick = onSetWake,
+                )
+                Text(
+                    stringResource(R.string.schedule_stop_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        stringResource(R.string.schedule_autostart),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Switch(checked = autoStart, onCheckedChange = onToggleAutoStart)
+                }
+                if (autoStart) {
+                    TimeRow(
+                        label = stringResource(R.string.schedule_bedtime),
+                        minutes = bedtimeMinutes,
+                        onPick = onSetBedtime,
+                    )
+                    Text(
+                        stringResource(R.string.schedule_autostart_help),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                HorizontalDivider()
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        stringResource(R.string.schedule_alt_toggle),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    Switch(checked = altEnabled, onCheckedChange = onToggleAltEnabled)
+                }
+                if (altEnabled) {
+                    Text(
+                        stringResource(R.string.schedule_alt_help),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    AltDaysRow(selected = altDays, onToggle = onToggleAltDay)
+                    TimeRow(
+                        label = stringResource(R.string.schedule_alt_wake),
+                        minutes = altWakeMinutes,
+                        onPick = onSetAltWake,
+                    )
+                    if (autoStart) {
+                        TimeRow(
+                            label = stringResource(R.string.schedule_alt_bedtime),
+                            minutes = altBedtimeMinutes,
+                            onPick = onSetAltBedtime,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AltDaysRow(
+    selected: Set<Int>,
+    onToggle: (Int) -> Unit,
+) {
+    val locale = Locale.getDefault()
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        DayOfWeek.entries.forEach { day ->
+            FilterChip(
+                selected = day.value in selected,
+                onClick = { onToggle(day.value) },
+                label = { Text(day.getDisplayName(TextStyle.SHORT, locale)) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun TimeRow(
+    label: String,
+    minutes: Int,
+    onPick: (Int) -> Unit,
+) {
+    val context = LocalContext.current
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyLarge)
+        TextButton(
+            onClick = {
+                TimePickerDialog(
+                    context,
+                    { _, hour, minute -> onPick(hour * 60 + minute) },
+                    minutes / 60,
+                    minutes % 60,
+                    true, // formato 24 h
+                ).show()
+            },
+        ) {
+            Text(
+                stringResource(R.string.schedule_time_value, minutes / 60, minutes % 60),
+                style = MaterialTheme.typography.titleMedium,
             )
         }
     }

@@ -1,6 +1,7 @@
 package com.sesolibre.somnia.ui.night
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import android.content.ClipData
@@ -44,9 +46,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -144,6 +148,14 @@ fun NightScreen(
     var editingLog by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
     var confirmingDelete by remember { mutableStateOf(false) }
+
+    // Filtro de la lista de eventos por categoría (al tocar el desglose).
+    var filterCategoryKey by rememberSaveable { mutableStateOf<String?>(null) }
+    val filteredEvents = remember(events, filterCategoryKey) {
+        filterCategoryKey?.let { key ->
+            events.filter { ApneaHeuristic.effectiveCategory(it) == key }
+        } ?: events
+    }
 
     if (confirmingDelete) {
         AlertDialog(
@@ -312,7 +324,15 @@ fun NightScreen(
             }
 
             summary?.let { sum ->
-                item { CategoryBreakdown(sum) }
+                item {
+                    CategoryBreakdown(
+                        summary = sum,
+                        selectedKey = filterCategoryKey,
+                        onToggle = { key ->
+                            filterCategoryKey = if (filterCategoryKey == key) null else key
+                        },
+                    )
+                }
             }
 
             if (highlights.isNotEmpty()) {
@@ -398,13 +418,32 @@ fun NightScreen(
             }
 
             item {
-                Text(
-                    stringResource(R.string.events_header, events.size),
-                    style = MaterialTheme.typography.titleMedium,
-                )
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        filterCategoryKey?.let {
+                            stringResource(
+                                R.string.events_header_filtered,
+                                categoryLabel(it),
+                                filteredEvents.size,
+                                events.size,
+                            )
+                        } ?: stringResource(R.string.events_header, events.size),
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (filterCategoryKey != null) {
+                        TextButton(onClick = { filterCategoryKey = null }) {
+                            Text(stringResource(R.string.events_filter_clear))
+                        }
+                    }
+                }
             }
 
-            if (events.isEmpty()) {
+            if (filteredEvents.isEmpty()) {
                 item {
                     Text(
                         stringResource(R.string.events_empty),
@@ -414,7 +453,7 @@ fun NightScreen(
                 }
             }
 
-            items(events, key = { it.id }) { event ->
+            items(filteredEvents, key = { it.id }) { event ->
                 EventRow(
                     event = event,
                     playing = playingId == event.id,
@@ -441,7 +480,11 @@ fun NightScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun CategoryBreakdown(summary: NightSummary) {
+private fun CategoryBreakdown(
+    summary: NightSummary,
+    selectedKey: String?,
+    onToggle: (String) -> Unit,
+) {
     Card {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
@@ -455,13 +498,27 @@ private fun CategoryBreakdown(summary: NightSummary) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     NightSummary.BODY_CATEGORIES.forEach { category ->
                         val n = summary.count(category)
                         if (n > 0) {
+                            val selected = selectedKey == category.key
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .then(
+                                        if (selected) {
+                                            Modifier.background(
+                                                MaterialTheme.colorScheme.secondaryContainer,
+                                            )
+                                        } else {
+                                            Modifier
+                                        }
+                                    )
+                                    .clickable { onToggle(category.key) }
+                                    .padding(horizontal = 6.dp, vertical = 4.dp),
                             ) {
                                 Spacer(
                                     Modifier
@@ -480,6 +537,11 @@ private fun CategoryBreakdown(summary: NightSummary) {
                         }
                     }
                 }
+                Text(
+                    stringResource(R.string.night_breakdown_filter_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             if (summary.environmentCount > 0 || summary.otherCount > 0) {
                 Text(
