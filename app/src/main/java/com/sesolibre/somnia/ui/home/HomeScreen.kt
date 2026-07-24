@@ -108,7 +108,12 @@ fun HomeScreen(
                             contentDescription = stringResource(R.string.app_name),
                             contentScale = ContentScale.Fit,
                             alignment = Alignment.CenterStart,
-                            modifier = Modifier.height(44.dp),
+                            // weight(1f) da TODO el ancho libre de la fila: sin él
+                            // el ancho se queda en el intrínseco del PNG (72 dp) y
+                            // Fit encogería el logo a 21 dp de alto.
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(72.dp),
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = onOpenProfile) {
