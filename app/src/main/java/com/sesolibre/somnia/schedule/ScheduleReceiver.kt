@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.sesolibre.somnia.data.MonitorStateHolder
+import com.sesolibre.somnia.data.SessionRepository
 import com.sesolibre.somnia.service.MonitorService
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +27,7 @@ class ScheduleReceiver : BroadcastReceiver() {
 
     @Inject lateinit var scheduler: SleepScheduler
     @Inject lateinit var stateHolder: MonitorStateHolder
+    @Inject lateinit var repository: SessionRepository
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
@@ -36,7 +38,8 @@ class ScheduleReceiver : BroadcastReceiver() {
                 when (action) {
                     ACTION_START -> maybeStart(context)
                     ACTION_STOP -> maybeStop(context)
-                    // BOOT_COMPLETED / TIME_SET / TIMEZONE_CHANGED: solo re-armar.
+                    // BOOT_COMPLETED / TIME_SET / TIMEZONE_CHANGED /
+                    // SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED: solo re-armar.
                 }
                 scheduler.sync()
             } catch (t: Throwable) {
@@ -60,11 +63,25 @@ class ScheduleReceiver : BroadcastReceiver() {
             .onFailure { Log.w(TAG, "no se pudo iniciar el monitoreo", it) }
     }
 
-    /** Detiene solo si hay una sesión en curso (evita arrancar el servicio para nada). */
-    private fun maybeStop(context: Context) {
-        if (!stateHolder.state.value.running) return
-        runCatching { MonitorService.stop(context) }
-            .onFailure { Log.w(TAG, "no se pudo detener el monitoreo", it) }
+    /**
+     * Cierra la noche. Si hay sesión en curso, detiene el servicio; además cierra
+     * cualquier sesión que haya quedado abierta porque el proceso murió antes de
+     * la hora de despertar (si no, esa noche se quedaría sin hora de fin para
+     * siempre, ya que el estado en memoria se pierde con el proceso).
+     */
+    private suspend fun maybeStop(context: Context) {
+        val running = stateHolder.state.value
+        if (running.running) {
+            runCatching { MonitorService.stop(context) }
+                .onFailure { Log.w(TAG, "no se pudo detener el monitoreo", it) }
+        }
+        val closed = runCatching {
+            repository.closeDanglingSessions(
+                nowMs = System.currentTimeMillis(),
+                exceptSessionId = running.sessionId,
+            )
+        }.getOrDefault(0)
+        if (closed > 0) Log.i(TAG, "sesiones huérfanas cerradas: $closed")
     }
 
     companion object {

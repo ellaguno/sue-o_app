@@ -2,6 +2,8 @@ package com.sesolibre.somnia.ui.settings
 
 import android.app.TimePickerDialog
 import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,6 +37,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sesolibre.somnia.R
 import com.sesolibre.somnia.data.prefs.SettingsRepository
@@ -59,6 +63,10 @@ fun SettingsScreen(
     val altDays by viewModel.scheduleAltDays.collectAsStateWithLifecycle()
     val altBedtimeMinutes by viewModel.altBedtimeMinutes.collectAsStateWithLifecycle()
     val altWakeMinutes by viewModel.altWakeMinutes.collectAsStateWithLifecycle()
+    val exactAlarmAllowed by viewModel.exactAlarmAllowed.collectAsStateWithLifecycle()
+
+    // El permiso se concede en Ajustes del sistema: hay que releerlo al volver.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshExactAlarmPermission() }
 
     Scaffold(
         topBar = {
@@ -80,6 +88,7 @@ fun SettingsScreen(
             ScheduleCard(
                 enabled = scheduleEnabled,
                 autoStart = scheduleAutoStart,
+                exactAlarmAllowed = exactAlarmAllowed,
                 bedtimeMinutes = bedtimeMinutes,
                 wakeMinutes = wakeMinutes,
                 altEnabled = altEnabled,
@@ -112,6 +121,7 @@ fun SettingsScreen(
 private fun ScheduleCard(
     enabled: Boolean,
     autoStart: Boolean,
+    exactAlarmAllowed: Boolean,
     bedtimeMinutes: Int,
     wakeMinutes: Int,
     altEnabled: Boolean,
@@ -185,6 +195,7 @@ private fun ScheduleCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    if (!exactAlarmAllowed) ExactAlarmWarning()
                 }
 
                 HorizontalDivider()
@@ -221,6 +232,37 @@ private fun ScheduleCard(
                 }
             }
         }
+    }
+}
+
+/**
+ * El inicio automático necesita alarmas exactas (Android 12+). Sin ese permiso
+ * la alarma nunca se arma, así que se avisa aquí con el atajo para concederlo.
+ */
+@Composable
+private fun ExactAlarmWarning() {
+    val context = LocalContext.current
+    Text(
+        stringResource(R.string.schedule_exact_alarm_warning),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.error,
+    )
+    TextButton(
+        onClick = {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val intent = Intent(
+                    Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                    Uri.fromParts("package", context.packageName, null),
+                )
+                if (runCatching { context.startActivity(intent) }.isFailure) {
+                    runCatching {
+                        context.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM))
+                    }
+                }
+            }
+        },
+    ) {
+        Text(stringResource(R.string.schedule_exact_alarm_action))
     }
 }
 

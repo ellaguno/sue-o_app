@@ -35,6 +35,36 @@ class SessionRepository @Inject constructor(
         sessionDao.update(session.copy(endEpochMs = nowMs, batteryEndPct = batteryPct))
     }
 
+    /**
+     * Cierra las sesiones que quedaron sin hora de fin porque el proceso murió
+     * a media noche (crash, batería, el sistema mató el servicio). El fin se
+     * fija en el último minuto realmente grabado —no en "ahora"— para no
+     * inventar sueño que nunca se registró.
+     *
+     * @param exceptSessionId sesión en curso, que no debe tocarse.
+     * @param minAgeMs edad mínima para considerar abandonada una sesión; evita
+     *   cerrar una que acaba de arrancar en otro hilo.
+     * @return cuántas sesiones se cerraron.
+     */
+    suspend fun closeDanglingSessions(
+        nowMs: Long,
+        exceptSessionId: Long? = null,
+        minAgeMs: Long = 60_000L,
+    ): Int {
+        val abandoned = sessionDao.openSessions()
+            .filter { it.id != exceptSessionId && nowMs - it.startEpochMs >= minAgeMs }
+        abandoned.forEach { session ->
+            val lastMinute = noiseSampleDao.lastMinuteIndex(session.id)
+            val endMs = if (lastMinute != null) {
+                (session.startEpochMs + (lastMinute + 1) * 60_000L).coerceAtMost(nowMs)
+            } else {
+                session.startEpochMs
+            }
+            sessionDao.update(session.copy(endEpochMs = endMs))
+        }
+        return abandoned.size
+    }
+
     suspend fun saveMinute(sessionId: Long, stats: MinuteStats) {
         noiseSampleDao.insert(
             NoiseSample(

@@ -4,6 +4,8 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.util.Log
 import com.sesolibre.somnia.MainActivity
 import com.sesolibre.somnia.data.prefs.SettingsRepository
 import com.sesolibre.somnia.data.prefs.SleepSchedule
@@ -22,7 +24,10 @@ import javax.inject.Singleton
  *   batería). Es la función principal.
  * - **Inicio (arranque):** [AlarmManager.setAlarmClock] porque arrancar un servicio
  *   en primer plano de micrófono desde segundo plano requiere una exención que solo
- *   dan las alarmas exactas de tipo despertador. Es opcional (opt-in).
+ *   dan las alarmas exactas de tipo despertador. Es opcional (opt-in) y exige el
+ *   permiso `SCHEDULE_EXACT_ALARM`, que el usuario concede en Ajustes del sistema:
+ *   sin él, [AlarmManager.setAlarmClock] lanza [SecurityException] (ver
+ *   [canScheduleExactAlarms]).
  *
  * El [ScheduleReceiver] re-arma la siguiente ocurrencia cada vez que una alarma se
  * dispara, y también tras reiniciar el dispositivo.
@@ -36,6 +41,14 @@ class SleepScheduler @Inject constructor(
     private val alarmManager: AlarmManager
         get() = context.getSystemService(AlarmManager::class.java)
 
+    /**
+     * ¿El sistema nos deja programar alarmas exactas? Desde Android 12 hay que
+     * pedirlo en Ajustes; sin ese permiso [AlarmManager.setAlarmClock] lanza
+     * [SecurityException] y el inicio automático nunca se arma.
+     */
+    fun canScheduleExactAlarms(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+
     /** Cancela y re-arma las alarmas según la configuración actual. Idempotente. */
     suspend fun sync() {
         val schedule = settings.sleepSchedule.first()
@@ -43,11 +56,17 @@ class SleepScheduler @Inject constructor(
         cancel(ScheduleReceiver.ACTION_STOP)
         if (!schedule.enabled) return
 
+        // Cada alarma se arma por separado: si una falla, la otra debe sobrevivir.
         // El fin automático se arma siempre que el horario está activo.
-        scheduleInexact(ScheduleReceiver.ACTION_STOP, nextStopAt(schedule))
-        if (schedule.autoStart) {
-            scheduleAlarmClock(ScheduleReceiver.ACTION_START, nextStartAt(schedule))
+        runCatching { scheduleInexact(ScheduleReceiver.ACTION_STOP, nextStopAt(schedule)) }
+            .onFailure { Log.w(TAG, "no se pudo armar el fin automático", it) }
+        if (!schedule.autoStart) return
+        if (!canScheduleExactAlarms()) {
+            Log.w(TAG, "inicio automático no armado: falta el permiso de alarmas exactas")
+            return
         }
+        runCatching { scheduleAlarmClock(ScheduleReceiver.ACTION_START, nextStartAt(schedule)) }
+            .onFailure { Log.w(TAG, "no se pudo armar el inicio automático", it) }
     }
 
     private fun scheduleInexact(action: String, triggerAtMs: Long) {
@@ -126,6 +145,7 @@ class SleepScheduler @Inject constructor(
     }
 
     private companion object {
+        const val TAG = "SleepScheduler"
         const val REQ_START = 100
         const val REQ_STOP = 101
         const val REQ_SHOW = 102

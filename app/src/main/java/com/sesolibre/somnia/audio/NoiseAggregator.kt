@@ -24,6 +24,18 @@ class NoiseAggregator(private val readingsPerMinute: Int = 60) {
         return if (readings.size >= readingsPerMinute) flush() else null
     }
 
+    /**
+     * Tras un hueco de captura (el micrófono se cayó y se recuperó), continúa en
+     * el minuto que corresponde al tiempo REAL transcurrido; si no, la serie
+     * "encogería" la noche y los minutos dejarían de coincidir con el reloj.
+     * Devuelve el minuto parcial que quedaba pendiente, si lo había.
+     */
+    fun resumeAt(minuteIndex: Int): MinuteStats? {
+        val pending = flush()
+        if (minuteIndex > this.minuteIndex) this.minuteIndex = minuteIndex
+        return pending
+    }
+
     /** Cierra el minuto en curso aunque esté incompleto (fin de sesión). */
     fun flush(): MinuteStats? {
         if (readings.isEmpty()) return null

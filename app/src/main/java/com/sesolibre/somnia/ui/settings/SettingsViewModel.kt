@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.sesolibre.somnia.data.prefs.SettingsRepository
 import com.sesolibre.somnia.schedule.SleepScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -63,6 +65,22 @@ class SettingsViewModel @Inject constructor(
 
     val altWakeMinutes: StateFlow<Int> = settings.altWakeMinutes
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsRepository.DEFAULT_ALT_WAKE_MIN)
+
+    private val _exactAlarmAllowed = MutableStateFlow(sleepScheduler.canScheduleExactAlarms())
+
+    /**
+     * Permiso de alarmas exactas: sin él el inicio automático no se arma. Se
+     * relee al volver a la pantalla, porque se concede en Ajustes del sistema.
+     */
+    val exactAlarmAllowed: StateFlow<Boolean> = _exactAlarmAllowed.asStateFlow()
+
+    fun refreshExactAlarmPermission() {
+        val allowed = sleepScheduler.canScheduleExactAlarms()
+        if (_exactAlarmAllowed.value == allowed) return
+        _exactAlarmAllowed.value = allowed
+        // Si acaban de concederlo, arma ya la alarma de inicio.
+        viewModelScope.launch { sleepScheduler.sync() }
+    }
 
     fun setScheduleEnabled(enabled: Boolean) = withResync { settings.setScheduleEnabled(enabled) }
     fun setScheduleAutoStart(enabled: Boolean) = withResync { settings.setScheduleAutoStart(enabled) }

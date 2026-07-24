@@ -9,6 +9,8 @@
     <string name="notif_monitoring_title">Monitoreando tu sueño</string>
     <string name="notif_monitoring_text">%1$s · %2$s</string>
     <string name="notif_action_stop">Detener</string>
+    <string name="notif_monitor_lost_title">El monitoreo se detuvo solo</string>
+    <string name="notif_monitor_lost_text">Somnia perdió el micrófono a las %1$s y cerró la noche ahí. Lo grabado hasta ese momento está guardado. Suele pasar cuando otra app toma el micrófono o el sistema cierra la app para ahorrar batería.</string>
 
     <string name="monitoring_active">Monitoreo activo</string>
     <string name="monitoring_idle">Listo para monitorear</string>
@@ -150,6 +152,8 @@
     <string name="schedule_stop_note">El monitoreo se detiene solo cerca de tu hora de despertar (puede variar unos minutos para cuidar la batería). Si olvidas detenerlo, se cierra por ti.</string>
     <string name="schedule_autostart">Iniciar monitoreo automáticamente</string>
     <string name="schedule_autostart_help">Requiere haber concedido el permiso de micrófono al menos una vez. En algunos teléfonos el inicio puede tardar unos minutos.</string>
+    <string name="schedule_exact_alarm_warning">Android no permite que Somnia programe alarmas exactas, y sin eso el monitoreo no puede arrancar solo a tu hora de dormir. Concede «Alarmas y recordatorios» para activarlo.</string>
+    <string name="schedule_exact_alarm_action">Permitir alarmas exactas</string>
     <string name="schedule_alt_toggle">Horario distinto ciertos días</string>
     <string name="schedule_alt_help">Elige los días con otro horario (por ejemplo, el fin de semana). Cada día se refiere a la noche que empieza ese día: la noche del viernes termina el sábado por la mañana.</string>
     <string name="schedule_alt_wake">Despertar (esos días)</string>

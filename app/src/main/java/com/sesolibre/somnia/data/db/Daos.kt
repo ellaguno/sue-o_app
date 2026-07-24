@@ -48,6 +48,10 @@ interface SessionDao {
     @Query("SELECT * FROM sessions ORDER BY startEpochMs DESC")
     fun observeAll(): Flow<List<Session>>
 
+    /** Sesiones sin hora de fin: o están en curso, o el proceso murió antes de cerrarlas. */
+    @Query("SELECT * FROM sessions WHERE endEpochMs IS NULL")
+    suspend fun openSessions(): List<Session>
+
     @Query("DELETE FROM sessions WHERE id = :id")
     suspend fun delete(id: Long)
 }
@@ -62,6 +66,10 @@ interface NoiseSampleDao {
 
     @Query("SELECT * FROM noise_samples")
     fun observeAll(): Flow<List<NoiseSample>>
+
+    /** Último minuto guardado de una sesión (null si no se guardó ninguno). */
+    @Query("SELECT MAX(minuteIndex) FROM noise_samples WHERE sessionId = :sessionId")
+    suspend fun lastMinuteIndex(sessionId: Long): Int?
 }
 
 @Dao

@@ -24,8 +24,20 @@ class SomniaApp : Application() {
         super.onCreate()
         createNotificationChannel()
         pruneOldClips()
+        closeDanglingSessions()
         // Re-arma el horario de sueño por si el proceso se recreó o cambió la config.
         appScope.launch { runCatching { sleepScheduler.sync() } }
+    }
+
+    /**
+     * Si una noche anterior quedó sin cerrar (el proceso murió mientras grababa),
+     * se cierra ahora con la hora del último minuto grabado. El proceso acaba de
+     * arrancar, así que no hay sesión en curso que proteger.
+     */
+    private fun closeDanglingSessions() {
+        appScope.launch {
+            runCatching { repository.closeDanglingSessions(System.currentTimeMillis()) }
+        }
     }
 
     /** Retención: borra el audio (no los metadatos) de clips viejos. */
