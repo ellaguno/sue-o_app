@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.ui.profile
 
+import com.sesolibre.somnia.ui.components.BackButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -65,7 +66,7 @@ fun ProfileScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.profile_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Text(stringResource(R.string.back)) }
+                    BackButton(onBack)
                 },
             )
         },

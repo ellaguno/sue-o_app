@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.stats
 
+import kotlin.math.roundToInt
 import com.sesolibre.somnia.data.db.NightLog
 import com.sesolibre.somnia.data.db.NightTag
 import com.sesolibre.somnia.data.db.NoiseSample
@@ -66,9 +67,27 @@ object TrendsAnalyzer {
         events: List<SoundEvent>,
         samples: List<NoiseSample>,
         logs: List<NightLog>,
+    ): List<NightMetrics> = metricsWithPeaks(
+        sessions = sessions,
+        events = events,
+        peakDbfsBySession = samples.groupBy { it.sessionId }
+            .mapValues { (_, list) -> list.maxOf { it.dbMax } },
+        logs = logs,
+    )
+
+    /**
+     * Igual que [metrics], pero con el pico de ruido (dBFS) ya agregado por
+     * sesión: de la serie por minuto solo se usa el máximo, y así no hay que
+     * cargar cientos de miles de muestras en memoria (ver
+     * [com.sesolibre.somnia.data.db.NoiseSampleDao.peakBySession]).
+     */
+    fun metricsWithPeaks(
+        sessions: List<Session>,
+        events: List<SoundEvent>,
+        peakDbfsBySession: Map<Long, Double>,
+        logs: List<NightLog>,
     ): List<NightMetrics> {
         val eventsBySession = events.groupBy { it.sessionId }
-        val samplesBySession = samples.groupBy { it.sessionId }
         val tagsBySession = logs.associate { it.sessionId to it.tags }
 
         return sessions
@@ -80,7 +99,10 @@ object TrendsAnalyzer {
                 val summary = NightAnalyzer.summarize(
                     session = session,
                     events = eventsBySession[session.id].orEmpty(),
-                    samples = samplesBySession[session.id].orEmpty(),
+                    samples = emptyList(),
+                ).copy(
+                    peakDb = peakDbfsBySession[session.id]
+                        ?.let { (it + session.calibrationDbOffset).roundToInt() },
                 )
                 val snoringCount = summary.count(SomniaCategory.SNORING)
                 val coughCount = summary.count(SomniaCategory.COUGH)

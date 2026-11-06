@@ -1,7 +1,9 @@
 package com.sesolibre.somnia.ui.home
 
+import androidx.compose.ui.res.pluralStringResource
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.PowerManager
 import android.provider.Settings
 import androidx.compose.foundation.Image
@@ -238,7 +240,16 @@ private fun MonitorCard(
                 } ?: "—"
                 Text(dbText, style = MaterialTheme.typography.titleLarge)
                 Text(
-                    stringResource(R.string.monitor_live_stats, minutesSaved, eventsDetected),
+                    stringResource(R.string.db_estimate_note),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    stringResource(
+                        R.string.monitor_live_stats,
+                        minutesSaved,
+                        pluralStringResource(R.plurals.events_detected, eventsDetected, eventsDetected),
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -287,9 +298,25 @@ private fun BatteryOptimizationCard() {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            TextButton(onClick = {
-                context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
-            }) { Text(stringResource(R.string.battery_card_action)) }
+            TextButton(onClick = { openBatterySettings(context) }) {
+                Text(stringResource(R.string.battery_card_action))
+            }
+        }
+    }
+}
+
+/**
+ * Abre la ficha de Somnia en Ajustes (ahí está «Batería → Sin restricciones»);
+ * si el fabricante no la expone, la lista general de optimización de batería.
+ */
+private fun openBatterySettings(context: Context) {
+    val appDetails = Intent(
+        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        Uri.fromParts("package", context.packageName, null),
+    )
+    runCatching { context.startActivity(appDetails) }.onFailure {
+        runCatching {
+            context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
         }
     }
 }
@@ -318,6 +345,26 @@ private fun SessionCard(item: SessionWithStats, onClick: () -> Unit) {
                         ?: stringResource(R.string.session_in_progress),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (item.eventCount > 0) {
+                Text(
+                    if (item.snoringCount > 0) {
+                        stringResource(
+                            R.string.session_card_snoring,
+                            pluralStringResource(R.plurals.events_count, item.eventCount, item.eventCount),
+                            item.snoringCount,
+                            "%.1f".format(item.snoringMs / 60_000.0),
+                        )
+                    } else {
+                        stringResource(
+                            R.string.session_card_no_snoring,
+                            pluralStringResource(R.plurals.events_count, item.eventCount, item.eventCount),
+                        )
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (item.snoringCount > 0) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurface,
                 )
             }
             if (item.dbAvg != null) {

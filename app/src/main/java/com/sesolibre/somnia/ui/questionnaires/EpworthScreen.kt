@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.ui.questionnaires
 
+import com.sesolibre.somnia.ui.components.BackButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,7 +47,7 @@ fun EpworthScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.epworth_name)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Text(stringResource(R.string.back)) }
+                    BackButton(onBack)
                 },
             )
         },

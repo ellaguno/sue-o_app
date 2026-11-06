@@ -29,10 +29,17 @@ object ClipEncoder {
      * Codifica [pcm] y lo escribe en [outFile]. Devuelve `true` si el archivo
      * quedó escrito correctamente.
      */
-    fun encode(pcm: ShortArray, sampleRate: Int, outFile: File): Boolean {
+    fun encode(pcm: ShortArray, sampleRate: Int, outFile: File): Boolean =
+        encode(pcm, sampleRate, outFile, forceAac = false)
+
+    /**
+     * @param forceAac AAC/M4A aunque haya Opus: para clips que salen del
+     *   teléfono (correo), porque M4A se reproduce en cualquier equipo.
+     */
+    fun encode(pcm: ShortArray, sampleRate: Int, outFile: File, forceAac: Boolean): Boolean {
         outFile.parentFile?.mkdirs()
         return try {
-            if (opusSupported) {
+            if (opusSupported && !forceAac) {
                 encodeInternal(
                     pcm, sampleRate, outFile,
                     mime = MediaFormat.MIMETYPE_AUDIO_OPUS,

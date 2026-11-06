@@ -1,7 +1,11 @@
 package com.sesolibre.somnia.ui.trends
 
+import androidx.compose.ui.res.pluralStringResource
+import com.sesolibre.somnia.ui.components.BackButton
 import android.content.ClipData
 import android.content.Intent
+import android.widget.Toast
+import com.sesolibre.somnia.export.ReportMailer
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,8 +60,16 @@ fun TrendsScreen(
     val overview by viewModel.overview.collectAsStateWithLifecycle()
     val correlations by viewModel.correlations.collectAsStateWithLifecycle()
     val shareRequest by viewModel.shareRequest.collectAsStateWithLifecycle()
+    val emailDraft by viewModel.emailDraft.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
+    LaunchedEffect(emailDraft) {
+        emailDraft?.let { draft ->
+            runCatching { context.startActivity(ReportMailer.intent(context, draft)) }
+                .onFailure { Toast.makeText(context, R.string.email_no_app, Toast.LENGTH_LONG).show() }
+            viewModel.clearEmailDraft()
+        }
+    }
     LaunchedEffect(shareRequest) {
         shareRequest?.let { request ->
             val uri = FileProvider.getUriForFile(
@@ -84,7 +96,7 @@ fun TrendsScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.trends_title)) },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
+                    BackButton(onBack)
                 },
                 actions = {
                     if (metrics.isNotEmpty()) {
@@ -99,6 +111,11 @@ fun TrendsScreen(
                                 expanded = menuExpanded,
                                 onDismissRequest = { menuExpanded = false },
                             ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.email_menu)) },
+                                    onClick = { menuExpanded = false; viewModel.prepareEmail() },
+                                )
+                                HorizontalDivider()
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.export_csv)) },
                                     onClick = { menuExpanded = false; viewModel.exportCsv() },
@@ -149,7 +166,7 @@ private fun OverviewCard(overview: TrendsOverview) {
                 style = MaterialTheme.typography.titleSmall,
             )
             Text(
-                stringResource(R.string.trends_nights, overview.nights),
+                pluralStringResource(R.plurals.trends_nights, overview.nights, overview.nights),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(
@@ -174,7 +191,7 @@ private fun OverviewCard(overview: TrendsOverview) {
                     stringResource(
                         R.string.trends_pause_nights,
                         overview.nightsWithPausePattern,
-                        overview.nights,
+                        pluralStringResource(R.plurals.nights_count, overview.nights, overview.nights),
                     ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -232,7 +249,10 @@ private fun NightBreakdownCard(metrics: List<NightMetrics>) {
             )
             // Suma de todas las noches, destacada antes del detalle por día.
             Text(
-                stringResource(R.string.trends_total_label, metrics.size),
+                stringResource(
+                    R.string.trends_total_label,
+                    pluralStringResource(R.plurals.nights_count, metrics.size, metrics.size),
+                ),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Text(

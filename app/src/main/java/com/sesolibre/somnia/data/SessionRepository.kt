@@ -14,7 +14,12 @@ import com.sesolibre.somnia.data.db.SoundEventDao
 import com.sesolibre.somnia.stats.NightMetrics
 import com.sesolibre.somnia.stats.TrendsAnalyzer
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -27,11 +32,43 @@ class SessionRepository @Inject constructor(
     private val nightLogDao: NightLogDao,
 ) {
 
-    suspend fun startSession(nowMs: Long, batteryPct: Int?): Long =
-        sessionDao.insert(Session(startEpochMs = nowMs, batteryStartPct = batteryPct))
+    /**
+     * Abrir, reabrir y cerrar sesiones huérfanas pasan por este candado, y la
+     * sesión que está grabando queda en [activeSessionId]: así el cierre de
+     * huérfanas que corre al arrancar el proceso nunca cierra la noche que el
+     * servicio acaba de retomar.
+     */
+    private val sessionLock = Mutex()
 
-    suspend fun endSession(sessionId: Long, nowMs: Long, batteryPct: Int?) {
-        val session = sessionDao.byId(sessionId) ?: return
+    @Volatile
+    private var activeSessionId: Long? = null
+
+    suspend fun startSession(nowMs: Long, batteryPct: Int?): Long = sessionLock.withLock {
+        sessionDao.insert(Session(startEpochMs = nowMs, batteryStartPct = batteryPct))
+            .also { activeSessionId = it }
+    }
+
+    /**
+     * Retoma la última noche si el sistema mató el proceso a media grabación y
+     * reinició el servicio: es reciente (empezó hace menos de [maxAgeMs]) y
+     * sigue abierta o se cortó hace menos de [maxGapMs]. Así la noche no se
+     * parte en dos. Devuelve la sesión reabierta, o null para empezar una nueva.
+     */
+    suspend fun reopenRecentSession(nowMs: Long, maxAgeMs: Long, maxGapMs: Long): Session? =
+        sessionLock.withLock {
+            val last = sessionDao.latest() ?: return@withLock null
+            if (nowMs - last.startEpochMs > maxAgeMs) return@withLock null
+            val end = last.endEpochMs
+            if (end != null && nowMs - end > maxGapMs) return@withLock null
+            val reopened = last.copy(endEpochMs = null)
+            if (end != null) sessionDao.update(reopened)
+            activeSessionId = reopened.id
+            reopened
+        }
+
+    suspend fun endSession(sessionId: Long, nowMs: Long, batteryPct: Int?) = sessionLock.withLock {
+        if (activeSessionId == sessionId) activeSessionId = null
+        val session = sessionDao.byId(sessionId) ?: return@withLock
         sessionDao.update(session.copy(endEpochMs = nowMs, batteryEndPct = batteryPct))
     }
 
@@ -50,9 +87,10 @@ class SessionRepository @Inject constructor(
         nowMs: Long,
         exceptSessionId: Long? = null,
         minAgeMs: Long = 60_000L,
-    ): Int {
+    ): Int = sessionLock.withLock {
+        val active = activeSessionId
         val abandoned = sessionDao.openSessions()
-            .filter { it.id != exceptSessionId && nowMs - it.startEpochMs >= minAgeMs }
+            .filter { it.id != exceptSessionId && it.id != active && nowMs - it.startEpochMs >= minAgeMs }
         abandoned.forEach { session ->
             val lastMinute = noiseSampleDao.lastMinuteIndex(session.id)
             val endMs = if (lastMinute != null) {
@@ -62,7 +100,7 @@ class SessionRepository @Inject constructor(
             }
             sessionDao.update(session.copy(endEpochMs = endMs))
         }
-        return abandoned.size
+        abandoned.size
     }
 
     suspend fun saveMinute(sessionId: Long, stats: MinuteStats) {
@@ -90,11 +128,17 @@ class SessionRepository @Inject constructor(
     fun nightlyMetrics(): Flow<List<NightMetrics>> = combine(
         sessionDao.observeAll(),
         soundEventDao.observeAll(),
-        noiseSampleDao.observeAll(),
+        noiseSampleDao.peakBySession(),
         nightLogDao.observeAll(),
-    ) { sessions, events, samples, logs ->
-        TrendsAnalyzer.metrics(sessions, events, samples, logs)
+    ) { sessions, events, peaks, logs ->
+        TrendsAnalyzer.metricsWithPeaks(
+            sessions, events, peaks.associate { it.sessionId to it.dbMax }, logs,
+        )
     }
+        // Mientras se graba llega un minuto nuevo cada 60 s: se calcula fuera
+        // del hilo principal y, si se acumulan, solo cuenta el último.
+        .conflate()
+        .flowOn(Dispatchers.Default)
 
     fun observeSession(sessionId: Long): Flow<Session?> = sessionDao.observeById(sessionId)
 

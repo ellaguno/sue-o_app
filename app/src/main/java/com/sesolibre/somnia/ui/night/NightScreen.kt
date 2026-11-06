@@ -1,5 +1,9 @@
 package com.sesolibre.somnia.ui.night
 
+import androidx.compose.material.icons.filled.Email
+import com.sesolibre.somnia.export.ReportMailer
+import androidx.compose.ui.res.pluralStringResource
+import com.sesolibre.somnia.ui.components.BackButton
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -110,6 +114,10 @@ fun NightScreen(
     val highlights by viewModel.highlights.collectAsStateWithLifecycle()
     val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
     val shareRequest by viewModel.shareRequest.collectAsStateWithLifecycle()
+    val playbackFailed by viewModel.playbackFailed.collectAsStateWithLifecycle()
+    val emailPreparing by viewModel.emailPreparing.collectAsStateWithLifecycle()
+    val emailDraft by viewModel.emailDraft.collectAsStateWithLifecycle()
+    val emailFailed by viewModel.emailFailed.collectAsStateWithLifecycle()
 
     val context = LocalContext.current
     LaunchedEffect(shareRequest) {
@@ -130,6 +138,27 @@ fun NightScreen(
             viewModel.clearShareRequest()
         }
     }
+    LaunchedEffect(emailDraft) {
+        emailDraft?.let { draft ->
+            runCatching { context.startActivity(ReportMailer.intent(context, draft)) }
+                .onFailure {
+                    Toast.makeText(context, R.string.email_no_app, Toast.LENGTH_LONG).show()
+                }
+            viewModel.clearEmailDraft()
+        }
+    }
+    LaunchedEffect(emailFailed) {
+        if (emailFailed) {
+            Toast.makeText(context, R.string.email_failed, Toast.LENGTH_LONG).show()
+            viewModel.clearEmailFailed()
+        }
+    }
+    LaunchedEffect(playbackFailed) {
+        if (playbackFailed) {
+            Toast.makeText(context, R.string.playback_failed, Toast.LENGTH_SHORT).show()
+            viewModel.clearPlaybackFailed()
+        }
+    }
     LaunchedEffect(transcribeOutcome) {
         transcribeOutcome?.let { outcome ->
             val msg = when (outcome) {
@@ -148,13 +177,37 @@ fun NightScreen(
     var editingLog by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
     var confirmingDelete by remember { mutableStateOf(false) }
+    // Diálogo de correo: de toda la noche (emailEvent = null) o de un solo clip.
+    var emailing by remember { mutableStateOf(false) }
+    var emailEvent by remember { mutableStateOf<SoundEvent?>(null) }
 
     // Filtro de la lista de eventos por categoría (al tocar el desglose).
     var filterCategoryKey by rememberSaveable { mutableStateOf<String?>(null) }
-    val filteredEvents = remember(events, filterCategoryKey) {
+    // "Otro" suele ser la mayoría (ruido base ambiguo) y tapa lo relevante:
+    // sin filtro se oculta, con un botón para mostrarlo.
+    var showOther by rememberSaveable { mutableStateOf(false) }
+    val otherKey = SomniaCategory.OTHER.key
+    val otherCount = remember(events) {
+        events.count { ApneaHeuristic.effectiveCategory(it) == otherKey }
+    }
+    val filteredEvents = remember(events, filterCategoryKey, showOther) {
         filterCategoryKey?.let { key ->
             events.filter { ApneaHeuristic.effectiveCategory(it) == key }
-        } ?: events
+        } ?: if (showOther) events else events.filter { ApneaHeuristic.effectiveCategory(it) != otherKey }
+    }
+
+    if (emailPreparing) EmailPreparingDialog()
+    if (emailing) {
+        EmailDialog(
+            singleEvent = emailEvent,
+            filterCategoryKey = filterCategoryKey,
+            clipsFor = { viewModel.clipsFor(it, events) },
+            onSend = { pdf, csv, audio ->
+                emailing = false
+                viewModel.prepareEmail(pdf, csv, audio)
+            },
+            onDismiss = { emailing = false },
+        )
     }
 
     if (confirmingDelete) {
@@ -225,7 +278,7 @@ fun NightScreen(
                     )
                 },
                 navigationIcon = {
-                    TextButton(onClick = onBack) { Text(stringResource(R.string.back)) }
+                    BackButton(onBack)
                 },
                 actions = {
                     if (session != null) {
@@ -240,6 +293,15 @@ fun NightScreen(
                                 expanded = menuExpanded,
                                 onDismissRequest = { menuExpanded = false },
                             ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.email_menu)) },
+                                    onClick = {
+                                        menuExpanded = false
+                                        emailEvent = null
+                                        emailing = true
+                                    },
+                                )
+                                HorizontalDivider()
                                 DropdownMenuItem(
                                     text = { Text(stringResource(R.string.export_csv)) },
                                     onClick = { menuExpanded = false; viewModel.exportCsv() },
@@ -278,7 +340,7 @@ fun NightScreen(
                                 R.string.night_summary,
                                 durationMin?.let { "%dh %02dm".format(it / 60, it % 60) }
                                     ?: stringResource(R.string.session_in_progress),
-                                events.size,
+                                pluralStringResource(R.plurals.sound_events, events.size, events.size),
                             ),
                             style = MaterialTheme.typography.bodyMedium,
                         )
@@ -287,7 +349,9 @@ fun NightScreen(
                                 Text(
                                     stringResource(
                                         R.string.night_snore_summary,
-                                        sum.snoringEpisodes,
+                                        pluralStringResource(
+                                            R.plurals.events_count, sum.snoringEpisodes, sum.snoringEpisodes,
+                                        ),
                                         "%.1f".format(sum.snoringMinutes),
                                     ),
                                     style = MaterialTheme.typography.bodyMedium,
@@ -408,7 +472,7 @@ fun NightScreen(
                                 style = MaterialTheme.typography.titleSmall,
                             )
                             Text(
-                                stringResource(R.string.pause_pattern_body, pausePatterns),
+                                pluralStringResource(R.plurals.pause_pattern_body, pausePatterns, pausePatterns),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -431,13 +495,24 @@ fun NightScreen(
                                 filteredEvents.size,
                                 events.size,
                             )
-                        } ?: stringResource(R.string.events_header, events.size),
+                        } ?: if (!showOther && otherCount > 0) {
+                            stringResource(R.string.events_header_partial, filteredEvents.size, events.size)
+                        } else {
+                            stringResource(R.string.events_header, events.size)
+                        },
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f),
                     )
                     if (filterCategoryKey != null) {
                         TextButton(onClick = { filterCategoryKey = null }) {
                             Text(stringResource(R.string.events_filter_clear))
+                        }
+                    } else if (otherCount > 0) {
+                        TextButton(onClick = { showOther = !showOther }) {
+                            Text(
+                                if (showOther) stringResource(R.string.events_hide_other)
+                                else stringResource(R.string.events_show_other, otherCount),
+                            )
                         }
                     }
                 }
@@ -470,6 +545,10 @@ fun NightScreen(
                     onRelabel = { relabeling = event },
                     onAttribute = { attributing = event },
                     onTranscribe = { viewModel.transcribe(event) },
+                    onEmail = {
+                        emailEvent = event
+                        emailing = true
+                    },
                 )
             }
 
@@ -574,6 +653,7 @@ private fun EventRow(
     onRelabel: () -> Unit,
     onAttribute: () -> Unit,
     onTranscribe: () -> Unit,
+    onEmail: () -> Unit,
 ) {
     Card {
         Row(
@@ -634,11 +714,19 @@ private fun EventRow(
                 }
             }
             if (event.clipPath != null) {
-                FilledTonalButton(onClick = onTogglePlay) {
-                    Text(
-                        if (playing) stringResource(R.string.event_stop)
-                        else stringResource(R.string.event_play),
-                    )
+                Column(horizontalAlignment = Alignment.End) {
+                    FilledTonalButton(onClick = onTogglePlay) {
+                        Text(
+                            if (playing) stringResource(R.string.event_stop)
+                            else stringResource(R.string.event_play),
+                        )
+                    }
+                    IconButton(onClick = onEmail) {
+                        Icon(
+                            Icons.Default.Email,
+                            contentDescription = stringResource(R.string.email_clip_action),
+                        )
+                    }
                 }
             } else {
                 Text(

@@ -1,84 +1,105 @@
 package com.sesolibre.somnia.export
 
 import android.content.Context
-import android.graphics.Paint
-import android.graphics.pdf.PdfDocument
 import com.sesolibre.somnia.R
+import com.sesolibre.somnia.ml.SomniaCategory
 import com.sesolibre.somnia.stats.NightMetrics
+import com.sesolibre.somnia.stats.TagEffect
 import com.sesolibre.somnia.stats.TrendsOverview
 import java.io.File
-import java.io.FileOutputStream
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Reporte PDF de tendencias: resumen general, totales y una tabla con una fila
- * por noche. Pagina automáticamente si hay muchas noches.
+ * Reporte PDF de tendencias: resumen en tarjetas, gráficas por noche
+ * (minutos roncando, sonidos del cuerpo), relación con la bitácora y una tabla
+ * con una fila por noche. Pagina solo.
  */
 object TrendsPdfReport {
 
-    private const val PAGE_W = 595 // A4 a 72 dpi
-    private const val PAGE_H = 842
-    private const val MARGIN = 40f
-    private const val ROW_H = 15f
-
     // Posiciones x de las columnas de la tabla.
-    private val COLS = floatArrayOf(0f, 110f, 200f, 260f, 320f, 380f, 440f)
+    private val COLS = floatArrayOf(0f, 80f, 140f, 195f, 250f, 305f, 375f, 445f)
 
     fun render(
         context: Context,
         outFile: File,
         metrics: List<NightMetrics>,
         overview: TrendsOverview,
+        correlations: List<TagEffect> = emptyList(),
         zone: ZoneId = ZoneId.systemDefault(),
     ): File {
-        val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.getDefault()).withZone(zone)
+        val es = Locale("es")
+        val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd", es).withZone(zone)
+        val shortFmt = DateTimeFormatter.ofPattern("d/M", es).withZone(zone)
+        val longFmt = DateTimeFormatter.ofPattern("d MMM yyyy", es).withZone(zone)
+        val nights = metrics.sortedBy { it.startEpochMs }
+        fun at(ms: Long) = Instant.ofEpochMilli(ms)
 
-        val title = Paint().apply { textSize = 20f; isFakeBoldText = true; isAntiAlias = true }
-        val heading = Paint().apply { textSize = 13f; isFakeBoldText = true; isAntiAlias = true }
-        val body = Paint().apply { textSize = 11f; isAntiAlias = true }
-        val bold = Paint().apply { textSize = 11f; isFakeBoldText = true; isAntiAlias = true }
-
-        val doc = PdfDocument()
-        var pageNumber = 0
-        var page = doc.startPage(PdfDocument.PageInfo.Builder(PAGE_W, PAGE_H, ++pageNumber).create())
-        var y = MARGIN + 8f
-
-        fun newPageIfNeeded() {
-            if (y > PAGE_H - MARGIN) {
-                doc.finishPage(page)
-                page = doc.startPage(PdfDocument.PageInfo.Builder(PAGE_W, PAGE_H, ++pageNumber).create())
-                y = MARGIN + 8f
-            }
+        val pdf = PdfWriter(context.getString(R.string.pdf_footer))
+        pdf.text(context.getString(R.string.pdf_trends_title), pdf.title, lineGap = 8f)
+        if (nights.isNotEmpty()) {
+            pdf.text(
+                context.getString(
+                    R.string.pdf_trends_range,
+                    longFmt.format(at(nights.first().startEpochMs)),
+                    longFmt.format(at(nights.last().startEpochMs)),
+                ),
+                pdf.bold,
+            )
         }
+        pdf.space(10f)
 
-        page.canvas.drawText(
-            "${context.getString(R.string.app_name)} — ${context.getString(R.string.trends_title)}",
-            MARGIN, y, title,
-        )
-        y += 26f
-
-        // Resumen general
-        page.canvas.drawText(context.getString(R.string.trends_overview_title), MARGIN, y, heading)
-        y += 16f
         val h = (overview.avgDurationMinutes / 60).toInt()
         val m = (overview.avgDurationMinutes % 60).toInt()
-        listOf(
-            context.getString(R.string.trends_nights, overview.nights),
-            context.getString(R.string.trends_avg_snoring, "%.1f".format(overview.avgSnoringMinutes)),
-            context.getString(R.string.trends_avg_body, "%.1f".format(overview.avgBodyEvents)),
-            context.getString(R.string.trends_avg_duration, "%dh %02dm".format(h, m)),
-        ).forEach { line ->
-            page.canvas.drawText(line, MARGIN, y, body)
-            y += ROW_H
+        pdf.tiles(
+            listOf(
+                overview.nights.toString() to context.getString(R.string.pdf_tile_nights),
+                "%dh %02dm".format(h, m) to context.getString(R.string.pdf_tile_avg_duration),
+                "%.1f".format(overview.avgSnoringMinutes) to context.getString(R.string.pdf_tile_avg_snoring),
+                "%.1f".format(overview.avgBodyEvents) to context.getString(R.string.pdf_tile_avg_body),
+                overview.nightsWithPausePattern.toString() to context.getString(R.string.pdf_tile_pause_nights),
+            ),
+        )
+
+        pdf.section(context.getString(R.string.trends_snoring_chart))
+        val rect = pdf.block(110f)
+        PdfCharts.verticalBars(
+            pdf.canvas, rect,
+            nights.map { shortFmt.format(at(it.startEpochMs)) to it.snoringMinutes },
+            PdfCharts.argb(SomniaCategory.SNORING),
+        ) { if (it < 10) "%.1f".format(it) else "%.0f".format(it) }
+
+        pdf.section(context.getString(R.string.pdf_trends_body_chart))
+        val rect2 = pdf.block(110f)
+        PdfCharts.verticalBars(
+            pdf.canvas, rect2,
+            nights.map { shortFmt.format(at(it.startEpochMs)) to it.bodyEventCount.toDouble() },
+            PdfCharts.argb(SomniaCategory.BREATHING),
+        ) { "%.0f".format(it) }
+
+        if (correlations.isNotEmpty()) {
+            pdf.section(context.getString(R.string.trends_corr_title))
+            correlations.forEach { effect ->
+                pdf.text(
+                    context.getString(
+                        R.string.trends_corr_line,
+                        ReportLabels.tag(context, effect.tag),
+                        "%.1f".format(effect.avgSnoringWith),
+                        "%.1f".format(effect.avgSnoringWithout),
+                        "%+.1f".format(effect.deltaMinutes),
+                    ),
+                )
+            }
+            pdf.wrapped(context.getString(R.string.pdf_corr_note), pdf.small)
         }
-        y += 12f
 
         // Tabla por noche
-        val headers = listOf(
+        pdf.section(context.getString(R.string.trends_breakdown_title))
+        val header = listOf(
             context.getString(R.string.export_col_date),
+            context.getString(R.string.pdf_col_duration),
             context.getString(R.string.cat_snoring),
             context.getString(R.string.cat_cough),
             context.getString(R.string.cat_speech),
@@ -86,19 +107,15 @@ object TrendsPdfReport {
             context.getString(R.string.export_col_snoring_min),
             context.getString(R.string.export_col_events),
         )
-        fun drawRow(cells: List<String>, paint: Paint) {
-            newPageIfNeeded()
-            cells.forEachIndexed { i, cell ->
-                page.canvas.drawText(cell, MARGIN + COLS[i], y, paint)
-            }
-            y += ROW_H
-        }
-        drawRow(headers, bold)
-        val nights = metrics.sortedBy { it.startEpochMs }
-        nights.forEach { night ->
-            drawRow(
+        pdf.row(header, COLS, pdf.smallBold)
+        nights.forEachIndexed { i, night ->
+            val before = pdf.y
+            pdf.ensureSpace(pdf.body.textSize + 5f)
+            if (pdf.y < before) pdf.row(header, COLS, pdf.smallBold)
+            pdf.row(
                 listOf(
-                    dateFmt.format(Instant.ofEpochMilli(night.startEpochMs)),
+                    dateFmt.format(at(night.startEpochMs)),
+                    ReportLabels.duration(night.durationMinutes),
                     night.snoringCount.toString(),
                     night.coughCount.toString(),
                     night.speechCount.toString(),
@@ -106,13 +123,16 @@ object TrendsPdfReport {
                     "%.1f".format(night.snoringMinutes),
                     night.totalEvents.toString(),
                 ),
-                body,
+                COLS,
+                pdf.body,
+                shaded = i % 2 == 1,
             )
         }
-        y += 4f
-        drawRow(
+        pdf.space(2f)
+        pdf.row(
             listOf(
                 context.getString(R.string.export_totals),
+                ReportLabels.duration(nights.sumOf { it.durationMinutes ?: 0L }),
                 nights.sumOf { it.snoringCount }.toString(),
                 nights.sumOf { it.coughCount }.toString(),
                 nights.sumOf { it.speechCount }.toString(),
@@ -120,13 +140,12 @@ object TrendsPdfReport {
                 "%.1f".format(nights.sumOf { it.snoringMinutes }),
                 nights.sumOf { it.totalEvents }.toString(),
             ),
-            bold,
+            COLS,
+            pdf.bold,
         )
+        pdf.space(6f)
+        pdf.wrapped(context.getString(R.string.recommendations_disclaimer), pdf.small)
 
-        doc.finishPage(page)
-        outFile.parentFile?.mkdirs()
-        FileOutputStream(outFile).use { doc.writeTo(it) }
-        doc.close()
-        return outFile
+        return pdf.writeTo(outFile)
     }
 }

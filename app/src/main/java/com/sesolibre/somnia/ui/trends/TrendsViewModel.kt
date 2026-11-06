@@ -1,5 +1,9 @@
 package com.sesolibre.somnia.ui.trends
 
+import com.sesolibre.somnia.R
+import com.sesolibre.somnia.data.prefs.SettingsRepository
+import com.sesolibre.somnia.export.EmailDraft
+import kotlinx.coroutines.flow.first
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -28,6 +32,7 @@ import javax.inject.Inject
 class TrendsViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
     repository: SessionRepository,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
 
     val metrics: StateFlow<List<NightMetrics>> = repository.nightlyMetrics()
@@ -75,9 +80,44 @@ class TrendsViewModel @Inject constructor(
                     outFile = File(exportsDir(), "somnia-tendencias.pdf"),
                     metrics = current,
                     overview = overview.value,
+                    correlations = correlations.value,
                 )
             }
             _shareRequest.value = ShareRequest(file, "application/pdf")
+        }
+    }
+
+    private val _emailDraft = MutableStateFlow<EmailDraft?>(null)
+    val emailDraft: StateFlow<EmailDraft?> = _emailDraft.asStateFlow()
+
+    fun clearEmailDraft() { _emailDraft.value = null }
+
+    /** Correo con el PDF (gráficas) y el CSV de tendencias adjuntos. */
+    fun prepareEmail() {
+        val current = metrics.value
+        if (current.isEmpty()) return
+        viewModelScope.launch {
+            _emailDraft.value = withContext(Dispatchers.IO) {
+                val dir = File(exportsDir(), "email").apply { deleteRecursively(); mkdirs() }
+                val pdf = TrendsPdfReport.render(
+                    appContext, File(dir, "somnia-tendencias.pdf"),
+                    current, overview.value, correlations.value,
+                )
+                val csv = File(dir, "somnia-tendencias.csv").apply { writeText(TrendsCsvReport.build(current)) }
+                val o = overview.value
+                EmailDraft(
+                    to = settings.reportEmail.first(),
+                    subject = appContext.getString(R.string.email_subject_trends, o.nights),
+                    body = appContext.getString(
+                        R.string.email_trends_body,
+                        o.nights,
+                        "%.1f".format(o.avgSnoringMinutes),
+                        "%.1f".format(o.avgBodyEvents),
+                        o.nightsWithPausePattern,
+                    ) + "\n\n" + appContext.getString(R.string.email_disclaimer),
+                    attachments = listOf(pdf, csv),
+                )
+            }
         }
     }
 }

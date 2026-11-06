@@ -36,6 +36,39 @@ class CategoryMapperTest {
     }
 
     @Test
+    fun `se comparan palabras completas, no subcadenas`() {
+        // Antes: "infant" contenía "fan" y "mastication" contenía "cat".
+        val cases = mapOf(
+            "Baby cry, infant cry" to SomniaCategory.SPEECH,
+            "Chewing, mastication" to SomniaCategory.MOVEMENT,
+            "Shuffling cards" to SomniaCategory.OTHER,
+            "Scary music" to SomniaCategory.ENVIRONMENT,
+            "Power windows, electric windows" to SomniaCategory.OTHER,
+            "Engine knocking" to SomniaCategory.ENVIRONMENT,
+            "Tick-tock" to SomniaCategory.ENVIRONMENT,
+        )
+        for ((label, expected) in cases) {
+            assertEquals("label=$label", expected, CategoryMapper.fromAudioSetLabel(label))
+        }
+    }
+
+    @Test
+    fun `sonidos del cuerpo y ruido de fondo antes sin categoria`() {
+        val cases = mapOf(
+            "Groan" to SomniaCategory.SPEECH,
+            "Grunt" to SomniaCategory.SPEECH,
+            "Hiccup" to SomniaCategory.BREATHING,
+            "White noise" to SomniaCategory.ENVIRONMENT,
+            "Pink noise" to SomniaCategory.ENVIRONMENT,
+            "Static" to SomniaCategory.ENVIRONMENT,
+            "Environmental noise" to SomniaCategory.ENVIRONMENT,
+        )
+        for ((label, expected) in cases) {
+            assertEquals("label=$label", expected, CategoryMapper.fromAudioSetLabel(label))
+        }
+    }
+
+    @Test
     fun `clases desconocidas caen en OTHER`() {
         assertEquals(SomniaCategory.OTHER, CategoryMapper.fromAudioSetLabel("Theremin"))
         assertEquals(SomniaCategory.OTHER, CategoryMapper.fromAudioSetLabel("Didgeridoo"))

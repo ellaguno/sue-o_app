@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -41,6 +42,22 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setTranscribeSpeech(enabled: Boolean) {
         context.settingsDataStore.edit { it[KEY_TRANSCRIBE_SPEECH] = enabled }
+    }
+
+    /** Si ya se mostró la bienvenida (colocación del teléfono, privacidad, batería). */
+    val onboardingDone: Flow<Boolean> = context.settingsDataStore.data
+        .map { it[KEY_ONBOARDING_DONE] ?: false }
+
+    suspend fun setOnboardingDone() {
+        context.settingsDataStore.edit { it[KEY_ONBOARDING_DONE] = true }
+    }
+
+    /** Correo que se propone como destinatario al enviar un reporte (p. ej. el del médico). */
+    val reportEmail: Flow<String> = context.settingsDataStore.data
+        .map { it[KEY_REPORT_EMAIL] ?: "" }
+
+    suspend fun setReportEmail(email: String) {
+        context.settingsDataStore.edit { it[KEY_REPORT_EMAIL] = email.trim() }
     }
 
     // --- Horario de sueño (inicio/fin automático por hora) ---
@@ -124,6 +141,8 @@ class SettingsRepository @Inject constructor(
     companion object {
         private val KEY_OPEN_MARGIN_DB = doublePreferencesKey("open_margin_db")
         private val KEY_TRANSCRIBE_SPEECH = booleanPreferencesKey("transcribe_speech")
+        private val KEY_ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
+        private val KEY_REPORT_EMAIL = stringPreferencesKey("report_email")
         private val KEY_SCHED_ENABLED = booleanPreferencesKey("schedule_enabled")
         private val KEY_SCHED_AUTOSTART = booleanPreferencesKey("schedule_auto_start")
         private val KEY_BEDTIME_MIN = intPreferencesKey("schedule_bedtime_min")

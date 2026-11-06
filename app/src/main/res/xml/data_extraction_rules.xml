@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 12+: qué entra al respaldo en la nube y a la transferencia entre
+    equipos. El AUDIO nunca sale del teléfono: los clips se excluyen siempre.
+    La base de datos (metadatos de las noches) y los ajustes sí se respaldan,
+    para no perder el historial al reinstalar o cambiar de teléfono.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="file" path="clips/" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="file" path="clips/" />
+    </device-transfer>
+</data-extraction-rules>

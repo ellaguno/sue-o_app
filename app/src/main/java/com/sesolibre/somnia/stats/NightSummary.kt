@@ -53,8 +53,55 @@ data class NightSummary(
     }
 }
 
+/** Una hora de la noche: minutos roncando y sonidos del cuerpo en esa hora. */
+data class HourBucket(
+    val hourStartEpochMs: Long,
+    val snoringMinutes: Double,
+    val bodyEvents: Int,
+)
+
 /** Cálculo puro del resumen de una noche; testeable en JVM sin emulador. */
 object NightAnalyzer {
+
+    private const val HOUR_MS = 60 * 60_000L
+
+    /**
+     * Reparte la noche en horas de reloj (de la hora en que empezó a la hora
+     * en que terminó) y suma, por hora, los minutos roncando y los sonidos del
+     * cuerpo. Un ronquido que cruza la hora se reparte entre ambas.
+     *
+     * @param zoneOffsetMs desfase de la zona horaria, para alinear a horas locales.
+     */
+    fun hourlyBuckets(
+        session: Session,
+        events: List<SoundEvent>,
+        zoneOffsetMs: Long = 0L,
+    ): List<HourBucket> {
+        val end = session.endEpochMs ?: events.maxOfOrNull { it.endEpochMs } ?: return emptyList()
+        if (end <= session.startEpochMs) return emptyList()
+        val firstHour = Math.floorDiv(session.startEpochMs + zoneOffsetMs, HOUR_MS) * HOUR_MS - zoneOffsetMs
+        val hours = ((end - firstHour + HOUR_MS - 1) / HOUR_MS).toInt().coerceAtLeast(1)
+        val snoreMs = LongArray(hours)
+        val body = IntArray(hours)
+        val bodyKeys = NightSummary.BODY_CATEGORIES.map { it.key }.toSet()
+        for (event in events) {
+            val category = ApneaHeuristic.effectiveCategory(event)
+            val idx = ((event.startEpochMs - firstHour) / HOUR_MS).toInt()
+            if (idx in 0 until hours && category in bodyKeys) body[idx]++
+            if (category != SomniaCategory.SNORING.key) continue
+            var t = event.startEpochMs
+            while (t < event.endEpochMs) {
+                val h = ((t - firstHour) / HOUR_MS).toInt()
+                val hourEnd = firstHour + (h + 1) * HOUR_MS
+                val segmentEnd = minOf(hourEnd, event.endEpochMs)
+                if (h in 0 until hours) snoreMs[h] += segmentEnd - t
+                t = segmentEnd
+            }
+        }
+        return (0 until hours).map { h ->
+            HourBucket(firstHour + h * HOUR_MS, snoreMs[h] / 60_000.0, body[h])
+        }
+    }
 
     fun summarize(
         session: Session,

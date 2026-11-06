@@ -89,7 +89,7 @@ dependencies {
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
     implementation(libs.navigation.compose)
-    implementation(libs.tensorflow.lite)
+    implementation(libs.litert)
     implementation(libs.androidx.datastore.preferences)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)

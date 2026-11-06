@@ -14,6 +14,12 @@ import com.sesolibre.somnia.data.SessionRepository
 import com.sesolibre.somnia.data.prefs.SettingsRepository
 import com.sesolibre.somnia.export.CsvReport
 import com.sesolibre.somnia.export.PdfReport
+import com.sesolibre.somnia.export.ClipExporter
+import com.sesolibre.somnia.export.EmailDraft
+import com.sesolibre.somnia.export.NightReportData
+import com.sesolibre.somnia.export.ReportMailer
+import com.sesolibre.somnia.data.db.QuestionnaireResult
+import com.sesolibre.somnia.R
 import com.sesolibre.somnia.data.db.NightLog
 import com.sesolibre.somnia.data.db.NightTag
 import com.sesolibre.somnia.data.db.NoiseSample
@@ -37,6 +43,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -50,7 +57,7 @@ class NightViewModel @Inject constructor(
     @ApplicationContext private val appContext: Context,
     private val repository: SessionRepository,
     profileRepository: ProfileRepository,
-    settings: SettingsRepository,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
 
     private val sessionId: Long = checkNotNull(savedStateHandle["sessionId"])
@@ -109,22 +116,129 @@ class NightViewModel @Inject constructor(
     }
 
     fun exportPdf() {
-        val currentSession = session.value ?: return
-        val currentSummary = summary.value ?: return
         viewModelScope.launch {
-            val file = withContext(Dispatchers.IO) {
-                PdfReport.render(
-                    context = appContext,
-                    outFile = File(exportsDir(), "somnia-noche-${currentSession.id}.pdf"),
-                    session = currentSession,
-                    summary = currentSummary,
-                    highlights = highlights.value,
-                    tips = recommendations.value,
-                )
-            }
+            val data = reportData() ?: return@launch
+            val file = withContext(Dispatchers.IO) { renderPdf(data) }
             _shareRequest.value = ShareRequest(file, "application/pdf")
         }
     }
+
+    private val profile = profileRepository.observeProfile()
+    private val epworth = profileRepository.observeLatestResult(QuestionnaireResult.TYPE_EPWORTH)
+    private val stopBang = profileRepository.observeLatestResult(QuestionnaireResult.TYPE_STOP_BANG)
+
+    /** Foto actual de todo lo que va en el reporte (se lee directo de la BD). */
+    private suspend fun reportData(): NightReportData? {
+        val s = repository.observeSession(sessionId).first() ?: return null
+        val evts = repository.events(sessionId).first()
+        val smp = repository.samples(sessionId).first()
+        val sum = NightAnalyzer.summarize(s, evts, smp)
+        val log = repository.nightLog(sessionId).first()
+        return NightReportData(
+            session = s,
+            summary = sum,
+            samples = smp,
+            events = evts,
+            highlights = Highlights.topClips(evts, ApneaHeuristic.detect(evts)),
+            tips = SleepTips.forNight(sum, log?.tags ?: emptySet()),
+            nightLog = log,
+            companions = companions.value,
+            profile = profile.first(),
+            epworth = epworth.first(),
+            stopBang = stopBang.first(),
+        )
+    }
+
+    private fun renderPdf(data: NightReportData): File = PdfReport.render(
+        context = appContext,
+        outFile = File(exportsDir(), "somnia-noche-${fileDate(data.session.startEpochMs)}.pdf"),
+        data = data,
+    )
+
+    private fun fileDate(epochMs: Long): String =
+        java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
+            .withZone(java.time.ZoneId.systemDefault())
+            .format(java.time.Instant.ofEpochMilli(epochMs))
+
+    // --- Enviar por correo (reporte + grabaciones) ---
+
+    /** Qué grabaciones adjuntar al correo. */
+    sealed interface AudioSelection {
+        data object None : AudioSelection
+        data object Highlights : AudioSelection
+        data class Category(val key: String) : AudioSelection
+        data object Body : AudioSelection
+        data object All : AudioSelection
+        data class Single(val eventId: Long) : AudioSelection
+    }
+
+    /** Eventos con clip que entran en [selection] (en orden cronológico). */
+    fun clipsFor(selection: AudioSelection, allEvents: List<SoundEvent> = events.value): List<SoundEvent> {
+        val withClip = allEvents.filter { it.clipPath != null }
+        val bodyKeys = NightSummary.BODY_CATEGORIES.map { it.key }.toSet()
+        return when (selection) {
+            AudioSelection.None -> emptyList()
+            AudioSelection.Highlights ->
+                Highlights.topClips(allEvents, ApneaHeuristic.detect(allEvents)).map { it.event }
+            is AudioSelection.Category -> withClip.filter { ApneaHeuristic.effectiveCategory(it) == selection.key }
+            AudioSelection.Body -> withClip.filter { ApneaHeuristic.effectiveCategory(it) in bodyKeys }
+            AudioSelection.All -> withClip
+            is AudioSelection.Single -> withClip.filter { it.id == selection.eventId }
+        }.sortedBy { it.startEpochMs }
+    }
+
+    private val _emailPreparing = MutableStateFlow(false)
+    val emailPreparing: StateFlow<Boolean> = _emailPreparing.asStateFlow()
+
+    private val _emailDraft = MutableStateFlow<EmailDraft?>(null)
+    val emailDraft: StateFlow<EmailDraft?> = _emailDraft.asStateFlow()
+
+    fun clearEmailDraft() { _emailDraft.value = null }
+
+    fun prepareEmail(includePdf: Boolean, includeCsv: Boolean, audio: AudioSelection) {
+        if (_emailPreparing.value) return
+        _emailPreparing.value = true
+        viewModelScope.launch {
+            try {
+                val data = reportData() ?: return@launch
+                val draft = withContext(Dispatchers.IO) {
+                    // Cada envío parte de una carpeta limpia: no se cuelan clips de otro.
+                    val dir = File(exportsDir(), "email").apply { deleteRecursively(); mkdirs() }
+                    val files = mutableListOf<File>()
+                    if (includePdf) {
+                        files += PdfReport.render(appContext, File(dir, "somnia-noche-${fileDate(data.session.startEpochMs)}.pdf"), data)
+                    }
+                    if (includeCsv) {
+                        files += File(dir, "somnia-noche-${fileDate(data.session.startEpochMs)}.csv")
+                            .apply { writeText(CsvReport.build(data.session, data.events)) }
+                    }
+                    val clips = ClipExporter.export(appContext, clipsFor(audio, data.events), File(dir, "audio"))
+                    files += clips.map { it.file }
+                    val single = audio is AudioSelection.Single
+                    EmailDraft(
+                        to = settings.reportEmail.first(),
+                        subject = appContext.getString(
+                            if (single) R.string.email_subject_clip else R.string.email_subject_night,
+                            fileDate(data.session.startEpochMs),
+                        ),
+                        body = ReportMailer.nightBody(appContext, data, clips, includePdf),
+                        attachments = files,
+                    )
+                }
+                _emailDraft.value = draft
+            } catch (t: Throwable) {
+                Log.w(TAG, "no se pudo preparar el correo", t)
+                _emailFailed.value = true
+            } finally {
+                _emailPreparing.value = false
+            }
+        }
+    }
+
+    private val _emailFailed = MutableStateFlow(false)
+    val emailFailed: StateFlow<Boolean> = _emailFailed.asStateFlow()
+
+    fun clearEmailFailed() { _emailFailed.value = false }
 
     /** Reetiquetado manual de un evento (prioridad sobre el clasificador). */
     fun relabel(event: SoundEvent, category: SomniaCategory) {
@@ -205,29 +319,51 @@ class NightViewModel @Inject constructor(
     private var player: MediaPlayer? = null
     private var enhancer: LoudnessEnhancer? = null
 
+    /** Un clip no se pudo reproducir (dañado, a medio escribir…); se avisa una vez. */
+    private val _playbackFailed = MutableStateFlow(false)
+    val playbackFailed: StateFlow<Boolean> = _playbackFailed.asStateFlow()
+
+    fun clearPlaybackFailed() { _playbackFailed.value = false }
+
     fun togglePlay(event: SoundEvent) {
         if (_playingEventId.value == event.id) {
             stopPlayback()
             return
         }
         val path = event.clipPath ?: return
-        if (!File(path).exists()) return
         stopPlayback()
-        player = MediaPlayer().apply {
-            setDataSource(path)
-            setOnCompletionListener { stopPlayback() }
-            prepare()
+        if (!File(path).exists()) {
+            _playbackFailed.value = true
+            return
+        }
+        val mp = MediaPlayer()
+        player = mp
+        try {
+            mp.setDataSource(path)
+            mp.setOnCompletionListener { stopPlayback() }
+            mp.setOnErrorListener { _, what, extra ->
+                Log.w(TAG, "error reproduciendo clip ($what/$extra)")
+                stopPlayback()
+                _playbackFailed.value = true
+                true
+            }
+            mp.prepare()
             // Los clips se graban muy bajos (~-45 dBFS); los amplificamos por
             // clip según su pico para que sean audibles (ver ClipPlaybackGain).
             runCatching {
-                enhancer = LoudnessEnhancer(audioSessionId).apply {
+                enhancer = LoudnessEnhancer(mp.audioSessionId).apply {
                     setTargetGain(ClipPlaybackGain.gainMillibels(event.dbPeak))
                     enabled = true
                 }
             }.onFailure { Log.w(TAG, "LoudnessEnhancer no disponible", it) }
-            start()
+            mp.start()
+            _playingEventId.value = event.id
+        } catch (t: Throwable) {
+            // Un clip dañado no puede tumbar la app.
+            Log.w(TAG, "no se pudo reproducir $path", t)
+            stopPlayback()
+            _playbackFailed.value = true
         }
-        _playingEventId.value = event.id
     }
 
     private fun stopPlayback() {

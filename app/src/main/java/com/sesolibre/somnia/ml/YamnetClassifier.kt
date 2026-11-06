@@ -8,8 +8,11 @@ import java.nio.channels.FileChannel
 /**
  * Clasificador de sonidos on-device con YAMNet (LiteRT/TensorFlow Lite).
  * El modelo (~4 MB, 521 clases de AudioSet) corre 100% local; se le pasan
- * ventanas de 0.975 s y se promedian los puntajes de todas las ventanas
- * del evento.
+ * ventanas de 0.975 s, se toma el máximo por clase entre ventanas y
+ * [ScoreDecoder] decide la clase final.
+ *
+ * No es seguro para hilos (el `Interpreter` de LiteRT no lo es): el servicio
+ * lo usa desde un único hilo.
  */
 class YamnetClassifier(context: Context) : AutoCloseable {
 
@@ -58,16 +61,10 @@ class YamnetClassifier(context: Context) : AutoCloseable {
             for (i in maxScores.indices) if (scores[i] > maxScores[i]) maxScores[i] = scores[i]
         }
 
-        var topIdx = 0
-        for (i in maxScores.indices) if (maxScores[i] > maxScores[topIdx]) topIdx = i
-        val label = labels.getOrElse(topIdx) { "?" }
-        val score = maxScores[topIdx]
-
-        val category = if (score < MIN_CONFIDENCE) {
-            SomniaCategory.OTHER
-        } else {
-            CategoryMapper.fromAudioSetLabel(label)
-        }
+        val decision = ScoreDecoder.decide(maxScores, labels)
+        val label = decision.label
+        val score = decision.score
+        val category = decision.category
         Log.d(TAG, "clasificado '$label' score=${"%.2f".format(score)} -> ${category.key}")
         return Classification(label = label, score = score, category = category)
     }
@@ -92,7 +89,6 @@ class YamnetClassifier(context: Context) : AutoCloseable {
         private const val TAG = "YamnetClassifier"
         private const val MODEL_ASSET = "yamnet.tflite"
         private const val LABELS_ASSET = "yamnet_class_map.csv"
-        const val MIN_CONFIDENCE = 0.2f
 
         /** `38,/m/03cczk,"Chewing, mastication"` -> `Chewing, mastication` */
         fun parseDisplayName(csvLine: String): String {

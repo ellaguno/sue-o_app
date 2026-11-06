@@ -40,6 +40,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settings.setTranscribeSpeech(enabled) }
     }
 
+    val reportEmail: StateFlow<String> = settings.reportEmail
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
+    fun setReportEmail(email: String) {
+        viewModelScope.launch { settings.setReportEmail(email) }
+    }
+
     // --- Horario de sueño ---
 
     val scheduleEnabled: StateFlow<Boolean> = settings.scheduleEnabled

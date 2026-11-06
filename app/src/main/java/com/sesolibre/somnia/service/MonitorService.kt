@@ -31,8 +31,16 @@ import com.sesolibre.somnia.data.prefs.SettingsRepository
 import com.sesolibre.somnia.data.db.SoundEvent
 import com.sesolibre.somnia.ml.YamnetClassifier
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.job
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -46,8 +54,11 @@ import kotlin.math.roundToInt
 /**
  * Servicio en primer plano (tipo micrófono) que sostiene la captura de audio
  * durante toda la noche: una lectura de dB por segundo, agregada por minuto
- * a la base de datos. En Etapa 2 aquí mismo se conectará el detector de
- * eventos y el guardado de clips.
+ * a la base de datos, y los eventos detectados (clasificados y con su clip).
+ *
+ * Los eventos se procesan en UN solo hilo ([eventDispatcher]): el intérprete
+ * de YAMNet no es seguro para hilos, y así el tope de clips se cuenta sin
+ * carreras. Al detener se espera a que terminen los eventos pendientes.
  */
 @AndroidEntryPoint
 class MonitorService : LifecycleService() {
@@ -67,14 +78,32 @@ class MonitorService : LifecycleService() {
             .getOrNull()
     }
     private val classifier: YamnetClassifier? get() = classifierDelegate.value
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val eventDispatcher = Dispatchers.IO.limitedParallelism(1)
+    private val eventScope = CoroutineScope(SupervisorJob() + eventDispatcher)
+
     private val aggregator = NoiseAggregator()
     private var sessionId: Long = -1
     private var sessionStartMs: Long = 0
+    /**
+     * Reloj de pared en que arrancó el [pipeline] actual. Los offsets de los
+     * eventos son relativos a él (no a la sesión): tras retomar una noche o
+     * reabrir el micrófono el pipeline es nuevo y empieza en 0.
+     */
+    private var pipelineStartMs: Long = 0
+    private var stopping = false
     private var lastNotificationUpdateMs = 0L
 
     /** Reloj monótono de la última lectura de audio; lo vigila el watchdog. */
     @Volatile
     private var lastReadingElapsedMs = 0L
+    /**
+     * Última lectura con señal real. Un micrófono bloqueado (interruptor de
+     * privacidad, o el sistema le niega el micro a un servicio relanzado en
+     * segundo plano) entrega ceros exactos: hay lecturas, pero no hay audio.
+     */
+    @Volatile
+    private var lastAudibleElapsedMs = 0L
     private var audioRestarts = 0
     private var lastRestartElapsedMs = 0L
 
@@ -82,13 +111,16 @@ class MonitorService : LifecycleService() {
         super.onStartCommand(intent, flags, startId)
         when (intent?.action) {
             ACTION_STOP -> stopMonitoring()
-            else -> startMonitoring()
+            // intent null = el sistema relanzó el servicio (START_STICKY) tras
+            // matar el proceso a media noche: se retoma la misma sesión.
+            null -> startMonitoring(resume = true)
+            else -> startMonitoring(resume = false)
         }
         return START_STICKY
     }
 
-    private fun startMonitoring() {
-        if (stateHolder.state.value.running) return
+    private fun startMonitoring(resume: Boolean) {
+        if (stateHolder.state.value.running || stopping) return
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
             != PackageManager.PERMISSION_GRANTED
         ) {
@@ -116,28 +148,48 @@ class MonitorService : LifecycleService() {
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "somnia:monitor")
             .apply { acquire(MAX_SESSION_MS) }
 
-        val startMs = System.currentTimeMillis()
-        sessionStartMs = startMs
+        val nowMs = System.currentTimeMillis()
         lastReadingElapsedMs = SystemClock.elapsedRealtime()
+        lastAudibleElapsedMs = lastReadingElapsedMs
         audioRestarts = 0
         lifecycleScope.launch {
-            sessionId = repository.startSession(startMs, batteryPct())
+            val resumed = if (resume) {
+                repository.reopenRecentSession(nowMs, MAX_SESSION_MS, RESUME_MAX_GAP_MS)
+            } else {
+                null
+            }
+            if (resumed != null) {
+                sessionId = resumed.id
+                sessionStartMs = resumed.startEpochMs
+                // La serie de ruido sigue en el minuto real; el hueco queda como hueco.
+                aggregator.resumeAt(((nowMs - sessionStartMs) / 60_000L).toInt())
+                android.util.Log.i(TAG, "noche $sessionId retomada tras reinicio del servicio")
+            } else {
+                sessionStartMs = nowMs
+                sessionId = repository.startSession(nowMs, batteryPct())
+            }
             stateHolder.update {
                 MonitorState(
                     running = true,
                     sessionId = sessionId,
-                    startedAtMs = startMs,
+                    startedAtMs = sessionStartMs,
                 )
             }
-            val openMarginDb = settings.openMarginDb.first()
-            pipeline = AudioPipeline(
-                detector = EventDetector(EventDetector.Config(openMarginDb = openMarginDb)),
-                onSecondReading = ::onSecondReading,
-                onEventCaptured = ::onEventCaptured,
-            )
+            newPipeline()
             startAudioEngine()
             startWatchdog()
         }
+    }
+
+    /** Pipeline nuevo (detector fresco) cuyos offsets empiezan en este instante. */
+    private suspend fun newPipeline() {
+        val openMarginDb = settings.openMarginDb.first()
+        pipelineStartMs = System.currentTimeMillis()
+        pipeline = AudioPipeline(
+            detector = EventDetector(EventDetector.Config(openMarginDb = openMarginDb)),
+            onSecondReading = ::onSecondReading,
+            onEventCaptured = ::onEventCaptured,
+        )
     }
 
     private fun startAudioEngine() {
@@ -158,8 +210,10 @@ class MonitorService : LifecycleService() {
             while (isActive) {
                 delay(WATCHDOG_PERIOD_MS)
                 if (!stateHolder.state.value.running) return@launch
-                val silentMs = SystemClock.elapsedRealtime() - lastReadingElapsedMs
-                if (silentMs < WATCHDOG_STALE_MS) continue
+                val nowElapsed = SystemClock.elapsedRealtime()
+                val silentMs = nowElapsed - lastReadingElapsedMs
+                val mutedMs = nowElapsed - lastAudibleElapsedMs
+                if (silentMs < WATCHDOG_STALE_MS && mutedMs < WATCHDOG_MUTED_MS) continue
 
                 // Los reintentos se cuentan por racha: un tropiezo aislado a las
                 // 2 y otro a las 5 no deben sumar para cerrar la noche.
@@ -173,7 +227,9 @@ class MonitorService : LifecycleService() {
                 audioRestarts++
                 lastRestartElapsedMs = now
                 android.util.Log.w(
-                    TAG, "sin lecturas por ${silentMs / 1000} s; reiniciando captura ($audioRestarts)",
+                    TAG,
+                    "sin audio (lecturas hace ${silentMs / 1000} s, señal hace ${mutedMs / 1000} s); " +
+                        "reiniciando captura ($audioRestarts)",
                 )
                 restartAudio()
             }
@@ -194,6 +250,10 @@ class MonitorService : LifecycleService() {
             if (sessionId > 0) repository.saveMinute(sessionId, pending)
         }
         lastReadingElapsedMs = SystemClock.elapsedRealtime()
+        lastAudibleElapsedMs = lastReadingElapsedMs
+        // Pipeline nuevo: el anterior contaba tiempo por muestras recibidas, y
+        // tras el hueco sus offsets ya no coincidirían con el reloj.
+        newPipeline()
         startAudioEngine()
     }
 
@@ -206,7 +266,8 @@ class MonitorService : LifecycleService() {
     private fun onEventCaptured(capture: AudioPipeline.EventCapture) {
         val currentSessionId = sessionId
         if (currentSessionId <= 0) return
-        lifecycleScope.launch(Dispatchers.IO) {
+        val baseMs = pipelineStartMs
+        eventScope.launch {
             // Clasificación on-device (YAMNet) sobre el PCM del evento
             val classification = runCatching { classifier?.classify(capture.pcm) }.getOrNull()
 
@@ -216,7 +277,8 @@ class MonitorService : LifecycleService() {
             var clipPath: String? = null
             if (underCap) {
                 val dir = File(filesDir, "clips/session_$currentSessionId")
-                val file = File(dir, "evt_${capture.startOffsetMs}.${ClipEncoder.fileExtension}")
+                val offsetInSession = baseMs + capture.startOffsetMs - sessionStartMs
+                val file = File(dir, "evt_$offsetInSession.${ClipEncoder.fileExtension}")
                 if (ClipEncoder.encode(capture.pcm, AudioEngine.SAMPLE_RATE, file)) {
                     clipPath = file.absolutePath
                 }
@@ -224,8 +286,8 @@ class MonitorService : LifecycleService() {
             repository.saveEvent(
                 SoundEvent(
                     sessionId = currentSessionId,
-                    startEpochMs = sessionStartMs + capture.startOffsetMs,
-                    endEpochMs = sessionStartMs + capture.endOffsetMs,
+                    startEpochMs = baseMs + capture.startOffsetMs,
+                    endEpochMs = baseMs + capture.endOffsetMs,
                     durationMs = capture.endOffsetMs - capture.startOffsetMs,
                     dbPeak = capture.peakDbfs,
                     dbAvg = capture.avgDbfs,
@@ -242,6 +304,7 @@ class MonitorService : LifecycleService() {
     /** Llamado desde el hilo de audio, una vez por segundo. */
     private fun onSecondReading(dbfs: Double) {
         lastReadingElapsedMs = SystemClock.elapsedRealtime()
+        if (dbfs > DbMeter.FLOOR_DBFS + 1.0) lastAudibleElapsedMs = lastReadingElapsedMs
         stateHolder.update { it.copy(currentDbfs = dbfs) }
         val minute = aggregator.add(dbfs)
         if (minute != null && sessionId > 0) {
@@ -274,12 +337,19 @@ class MonitorService : LifecycleService() {
      *   en ese caso se deja un aviso para que se note por la mañana.
      */
     private fun stopMonitoring(unexpected: Boolean = false) {
+        // El watchdog y el botón (o la alarma) pueden pedir parar a la vez.
+        if (stopping) return
+        stopping = true
         audioEngine?.stop()
         audioEngine = null
         pipeline = null
         val endedSessionId = sessionId
         lifecycleScope.launch {
             val endMs = System.currentTimeMillis()
+            // Que el último evento (clasificación + clip) alcance a guardarse.
+            withTimeoutOrNull(EVENT_DRAIN_TIMEOUT_MS) {
+                eventScope.coroutineContext.job.children.toList().joinAll()
+            }
             if (endedSessionId > 0) {
                 aggregator.flush()?.let { repository.saveMinute(endedSessionId, it) }
                 repository.endSession(endedSessionId, endMs, batteryPct())
@@ -289,6 +359,8 @@ class MonitorService : LifecycleService() {
             wakeLock = null
             ServiceCompat.stopForeground(this@MonitorService, ServiceCompat.STOP_FOREGROUND_REMOVE)
             if (unexpected) notifyUnexpectedStop(endMs)
+            sessionId = -1
+            stopping = false
             stopSelf()
         }
     }
@@ -350,8 +422,14 @@ class MonitorService : LifecycleService() {
     override fun onDestroy() {
         audioEngine?.stop()
         wakeLock?.let { if (it.isHeld) it.release() }
+        eventScope.cancel()
         if (classifierDelegate.isInitialized()) {
-            runCatching { classifierDelegate.value?.close() }
+            // En el mismo hilo de los eventos: se cierra DESPUÉS de cualquier
+            // clasificación en curso, nunca a la mitad (sería un crash nativo).
+            val classifier = classifierDelegate.value
+            CoroutineScope(eventDispatcher + NonCancellable).launch {
+                runCatching { classifier?.close() }
+            }
         }
         super.onDestroy()
     }
@@ -366,6 +444,12 @@ class MonitorService : LifecycleService() {
         private const val WATCHDOG_PERIOD_MS = 60_000L
         /** Sin una sola lectura en 2 min, la captura está caída. */
         private const val WATCHDOG_STALE_MS = 120_000L
+        /** Ceros exactos durante 3 min: el micrófono está bloqueado. */
+        private const val WATCHDOG_MUTED_MS = 180_000L
+        /** Tope de espera a los eventos pendientes al detener. */
+        private const val EVENT_DRAIN_TIMEOUT_MS = 10_000L
+        /** Retomar la noche solo si el corte fue hace menos de esto. */
+        private const val RESUME_MAX_GAP_MS = 30 * 60_000L
         private const val MAX_AUDIO_RESTARTS = 3
         /** Los reintentos solo se acumulan dentro de esta ventana. */
         private const val RESTART_WINDOW_MS = 30 * 60_000L

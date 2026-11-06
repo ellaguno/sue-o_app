@@ -24,14 +24,38 @@ import com.sesolibre.somnia.ui.settings.SettingsScreen
 import com.sesolibre.somnia.ui.theme.SomniaTheme
 import com.sesolibre.somnia.ui.trends.TrendsScreen
 import dagger.hilt.android.AndroidEntryPoint
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
+import com.sesolibre.somnia.data.prefs.SettingsRepository
+import com.sesolibre.somnia.ui.welcome.WelcomeScreen
+import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject lateinit var settings: SettingsRepository
+
+    /** El micrófono se negó "para siempre": solo se puede conceder en Ajustes. */
+    private var micBlocked by mutableStateOf(false)
 
     private val permissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
             if (results[Manifest.permission.RECORD_AUDIO] == true) {
                 MonitorService.start(this)
+            } else if (!shouldShowRequestPermissionRationale(Manifest.permission.RECORD_AUDIO)) {
+                // Android ya no mostrará el diálogo: hay que mandar a Ajustes.
+                micBlocked = true
             } else {
                 Toast.makeText(this, R.string.mic_permission_needed, Toast.LENGTH_LONG).show()
             }
@@ -41,8 +65,43 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             SomniaTheme {
+                val onboardingDone by settings.onboardingDone.collectAsState(initial = null)
+                val scope = rememberCoroutineScope()
+                if (micBlocked) {
+                    AlertDialog(
+                        onDismissRequest = { micBlocked = false },
+                        title = { Text(stringResource(R.string.mic_blocked_title)) },
+                        text = { Text(stringResource(R.string.mic_blocked_body)) },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                micBlocked = false
+                                runCatching {
+                                    startActivity(
+                                        Intent(
+                                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                            Uri.fromParts("package", packageName, null),
+                                        ),
+                                    )
+                                }
+                            }) { Text(stringResource(R.string.mic_blocked_action)) }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { micBlocked = false }) {
+                                Text(stringResource(R.string.cancel))
+                            }
+                        },
+                    )
+                }
+                // Hasta leer la preferencia no se decide la pantalla inicial (evita un parpadeo).
+                val done = onboardingDone ?: return@SomniaTheme
                 val nav = rememberNavController()
-                NavHost(navController = nav, startDestination = "home") {
+                NavHost(navController = nav, startDestination = if (done) "home" else "welcome") {
+                    composable("welcome") {
+                        WelcomeScreen(onDone = {
+                            scope.launch { settings.setOnboardingDone() }
+                            nav.navigate("home") { popUpTo("welcome") { inclusive = true } }
+                        })
+                    }
                     composable("home") {
                         HomeScreen(
                             onRequestStart = ::startWithPermissions,

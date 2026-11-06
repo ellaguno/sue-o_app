@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="events_detected">
+        <item quantity="one">%d evento detectado</item>
+        <item quantity="other">%d eventos detectados</item>
+    </plurals>
+    <plurals name="sound_events">
+        <item quantity="one">%d evento de sonido</item>
+        <item quantity="other">%d eventos de sonido</item>
+    </plurals>
+    <plurals name="events_count">
+        <item quantity="one">%d evento</item>
+        <item quantity="other">%d eventos</item>
+    </plurals>
+    <plurals name="nights_count">
+        <item quantity="one">%d noche</item>
+        <item quantity="other">%d noches</item>
+    </plurals>
+    <plurals name="trends_nights">
+        <item quantity="one">%d noche registrada</item>
+        <item quantity="other">%d noches registradas</item>
+    </plurals>
+    <plurals name="pause_pattern_body">
+        <item quantity="one">Se observó %d secuencia de ronquido → pausa larga → reanudación brusca. Esto NO es un diagnóstico; si se repite con frecuencia, coméntalo con un médico.</item>
+        <item quantity="other">Se observaron %d secuencias de ronquido → pausa larga → reanudación brusca. Esto NO es un diagnóstico; si se repite con frecuencia, coméntalo con un médico.</item>
+    </plurals>
+    <plurals name="email_clip_count">
+        <item quantity="one">%d grabación</item>
+        <item quantity="other">%d grabaciones</item>
+    </plurals>
+</resources>

@@ -1,5 +1,12 @@
 package com.sesolibre.somnia.ui.settings
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import com.sesolibre.somnia.ui.components.BackButton
 import android.app.TimePickerDialog
 import android.content.Intent
 import android.net.Uri
@@ -64,6 +71,7 @@ fun SettingsScreen(
     val altBedtimeMinutes by viewModel.altBedtimeMinutes.collectAsStateWithLifecycle()
     val altWakeMinutes by viewModel.altWakeMinutes.collectAsStateWithLifecycle()
     val exactAlarmAllowed by viewModel.exactAlarmAllowed.collectAsStateWithLifecycle()
+    val reportEmail by viewModel.reportEmail.collectAsStateWithLifecycle()
 
     // El permiso se concede en Ajustes del sistema: hay que releerlo al volver.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshExactAlarmPermission() }
@@ -73,7 +81,7 @@ fun SettingsScreen(
             TopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Text(stringResource(R.string.back)) }
+                    BackButton(onBack)
                 },
             )
         },
@@ -113,6 +121,8 @@ fun SettingsScreen(
                 enabled = transcribeSpeech,
                 onToggle = viewModel::setTranscribeSpeech,
             )
+            ReportEmailCard(savedEmail = reportEmail, onSave = viewModel::setReportEmail)
+            Spacer(Modifier.height(16.dp))
         }
     }
 }
@@ -360,6 +370,44 @@ private fun TranscriptionCard(
                 },
             ) {
                 Text(stringResource(R.string.transcription_download_languages))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReportEmailCard(savedEmail: String, onSave: (String) -> Unit) {
+    var email by rememberSaveable(savedEmail) { mutableStateOf(savedEmail) }
+    val valid = email.isBlank() || android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+    Card {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                stringResource(R.string.report_email_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                stringResource(R.string.report_email_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text(stringResource(R.string.report_email_label)) },
+                singleLine = true,
+                isError = !valid,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            if (email.trim() != savedEmail && valid) {
+                TextButton(onClick = { onSave(email) }) {
+                    Text(stringResource(R.string.profile_save))
+                }
             }
         }
     }

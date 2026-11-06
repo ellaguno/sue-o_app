@@ -14,7 +14,13 @@ data class SessionWithStats(
     val dbMin: Double?,
     val dbAvg: Double?,
     val dbMax: Double?,
+    val eventCount: Int = 0,
+    /** Eventos de ronquido (etiqueta manual > clasificador). */
+    val snoringCount: Int = 0,
+    val snoringMs: Long = 0,
 )
+
+data class SessionPeak(val sessionId: Long, val dbMax: Double)
 
 @Dao
 interface SessionDao {
@@ -36,7 +42,12 @@ interface SessionDao {
                COUNT(n.id) AS sampleCount,
                MIN(n.dbMin) AS dbMin,
                AVG(n.dbAvg) AS dbAvg,
-               MAX(n.dbMax) AS dbMax
+               MAX(n.dbMax) AS dbMax,
+               (SELECT COUNT(*) FROM sound_events e WHERE e.sessionId = s.id) AS eventCount,
+               (SELECT COUNT(*) FROM sound_events e WHERE e.sessionId = s.id
+                    AND COALESCE(e.manualLabel, e.category) = 'snoring') AS snoringCount,
+               (SELECT COALESCE(SUM(e.durationMs), 0) FROM sound_events e WHERE e.sessionId = s.id
+                    AND COALESCE(e.manualLabel, e.category) = 'snoring') AS snoringMs
         FROM sessions s
         LEFT JOIN noise_samples n ON n.sessionId = s.id
         GROUP BY s.id
@@ -52,6 +63,9 @@ interface SessionDao {
     @Query("SELECT * FROM sessions WHERE endEpochMs IS NULL")
     suspend fun openSessions(): List<Session>
 
+    @Query("SELECT * FROM sessions ORDER BY startEpochMs DESC LIMIT 1")
+    suspend fun latest(): Session?
+
     @Query("DELETE FROM sessions WHERE id = :id")
     suspend fun delete(id: Long)
 }
@@ -64,8 +78,9 @@ interface NoiseSampleDao {
     @Query("SELECT * FROM noise_samples WHERE sessionId = :sessionId ORDER BY minuteIndex")
     fun bySession(sessionId: Long): Flow<List<NoiseSample>>
 
-    @Query("SELECT * FROM noise_samples")
-    fun observeAll(): Flow<List<NoiseSample>>
+    /** Pico (dBFS) de cada sesión: lo único que Tendencias necesita de la serie. */
+    @Query("SELECT sessionId, MAX(dbMax) AS dbMax FROM noise_samples GROUP BY sessionId")
+    fun peakBySession(): Flow<List<SessionPeak>>
 
     /** Último minuto guardado de una sesión (null si no se guardó ninguno). */
     @Query("SELECT MAX(minuteIndex) FROM noise_samples WHERE sessionId = :sessionId")
