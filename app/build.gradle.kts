@@ -18,7 +18,7 @@ val keystoreProps = Properties().apply {
 // En builds locales cae al valor por defecto.
 val ciVersionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1
 // versionName: manual y semántico (se sube a mano antes de etiquetar un release).
-val appVersionName = "0.2.3"
+val appVersionName = "0.2.4"
 
 android {
     namespace = "com.sesolibre.somnia"
