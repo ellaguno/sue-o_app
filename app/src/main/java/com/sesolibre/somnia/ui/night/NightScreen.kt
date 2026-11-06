@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.ui.night
 
+import com.sesolibre.somnia.util.LocalDates
 import androidx.compose.material.icons.filled.Email
 import com.sesolibre.somnia.export.ReportMailer
 import androidx.compose.ui.res.pluralStringResource
@@ -230,8 +231,8 @@ fun NightScreen(
     }
 
     val zone = remember { ZoneId.systemDefault() }
-    val dateFmt = remember { DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Locale.getDefault()) }
-    val timeFmt = remember { DateTimeFormatter.ofPattern("HH:mm:ss", Locale.getDefault()) }
+    val dateFmt = remember { LocalDates.formatter(context, "EEEEdMMMM", zone) }
+    val timeFmt = remember { LocalDates.time(context, seconds = true, zone = zone) }
 
     relabeling?.let { event ->
         RelabelDialog(

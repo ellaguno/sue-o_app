@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.export
 
+import com.sesolibre.somnia.util.LocalDates
 import android.content.ClipData
 import android.content.ComponentName
 import android.content.Context
@@ -14,7 +15,6 @@ import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlin.math.roundToInt
 
 /** Correo listo para abrir en la app de correo del usuario. */
@@ -84,9 +84,8 @@ object ReportMailer {
         includesPdf: Boolean,
         zone: ZoneId = ZoneId.systemDefault(),
     ): String {
-        val es = Locale("es")
-        val dateFmt = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM yyyy", es).withZone(zone)
-        val timeFmt = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(zone)
+        val dateFmt = LocalDates.formatter(context, "EEEEdMMMMyyyy", zone)
+        val timeFmt = LocalDates.time(context, seconds = true, zone = zone)
         val s = data.summary
         val offset = data.session.calibrationDbOffset
         return buildString {

@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.ui.night
 
+import com.sesolibre.somnia.util.LocalDates
 import android.content.Context
 import android.media.MediaPlayer
 import android.media.audiofx.LoudnessEnhancer
@@ -107,8 +108,8 @@ class NightViewModel @Inject constructor(
         val currentSession = session.value ?: return
         viewModelScope.launch {
             val file = withContext(Dispatchers.IO) {
-                File(exportsDir(), "somnia-noche-${currentSession.id}.csv").apply {
-                    writeText(CsvReport.build(currentSession, events.value))
+                File(exportsDir(), "${nightFileBase(currentSession.startEpochMs)}.csv").apply {
+                    writeText(CsvReport.build(currentSession, events.value, labels = csvLabels()))
                 }
             }
             _shareRequest.value = ShareRequest(file, "text/csv")
@@ -151,9 +152,15 @@ class NightViewModel @Inject constructor(
 
     private fun renderPdf(data: NightReportData): File = PdfReport.render(
         context = appContext,
-        outFile = File(exportsDir(), "somnia-noche-${fileDate(data.session.startEpochMs)}.pdf"),
+        outFile = File(exportsDir(), "${nightFileBase(data.session.startEpochMs)}.pdf"),
         data = data,
     )
+
+    /** "somnia-noche-2026-11-05" / "somnia-night-2026-11-05", según el idioma. */
+    private fun nightFileBase(epochMs: Long): String =
+        "${appContext.getString(R.string.export_file_night)}-${fileDate(epochMs)}"
+
+    private fun csvLabels(): CsvReport.Labels = CsvReport.labelsFor(LocalDates.locale(appContext))
 
     private fun fileDate(epochMs: Long): String =
         java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -206,11 +213,11 @@ class NightViewModel @Inject constructor(
                     val dir = File(exportsDir(), "email").apply { deleteRecursively(); mkdirs() }
                     val files = mutableListOf<File>()
                     if (includePdf) {
-                        files += PdfReport.render(appContext, File(dir, "somnia-noche-${fileDate(data.session.startEpochMs)}.pdf"), data)
+                        files += PdfReport.render(appContext, File(dir, "${nightFileBase(data.session.startEpochMs)}.pdf"), data)
                     }
                     if (includeCsv) {
-                        files += File(dir, "somnia-noche-${fileDate(data.session.startEpochMs)}.csv")
-                            .apply { writeText(CsvReport.build(data.session, data.events)) }
+                        files += File(dir, "${nightFileBase(data.session.startEpochMs)}.csv")
+                            .apply { writeText(CsvReport.build(data.session, data.events, labels = csvLabels())) }
                     }
                     val clips = ClipExporter.export(appContext, clipsFor(audio, data.events), File(dir, "audio"))
                     files += clips.map { it.file }

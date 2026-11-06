@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.export
 
+import com.sesolibre.somnia.util.LocalDates
 import android.content.Context
 import com.sesolibre.somnia.R
 import com.sesolibre.somnia.data.db.NightLog
@@ -19,7 +20,6 @@ import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlin.math.roundToInt
 
 /** Todo lo que el reporte de una noche necesita (lo arma el ViewModel). */
@@ -55,11 +55,16 @@ object PdfReport {
         data: NightReportData,
         zone: ZoneId = ZoneId.systemDefault(),
     ): File {
-        val es = Locale("es")
-        val dateFmt = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM yyyy", es).withZone(zone)
-        val timeFmt = DateTimeFormatter.ofPattern("HH:mm").withZone(zone)
-        val secFmt = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(zone)
-        val stampFmt = DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm", es).withZone(zone)
+        // Todo en el idioma de la app (el del teléfono).
+        val locale = LocalDates.locale(context)
+        val dateFmt = LocalDates.formatter(context, "EEEEdMMMMyyyy", zone)
+        val timeFmt = LocalDates.time(context, zone = zone)
+        val secFmt = LocalDates.time(context, seconds = true, zone = zone)
+        val hourFmt = LocalDates.hour(context, zone)
+        val dayFmt = LocalDates.formatter(context, "dMMMyyyy", zone)
+        val stampFmt = object {
+            fun format(t: Instant) = "${dayFmt.format(t)}, ${timeFmt.format(t)}"
+        }
         fun at(ms: Long) = Instant.ofEpochMilli(ms)
 
         val session = data.session
@@ -73,7 +78,7 @@ object PdfReport {
         // --- Encabezado ---
         pdf.text(context.getString(R.string.pdf_night_title), pdf.title, lineGap = 8f)
         pdf.text(
-            dateFmt.format(at(session.startEpochMs)).replaceFirstChar { it.titlecase(es) },
+            dateFmt.format(at(session.startEpochMs)).replaceFirstChar { it.titlecase(locale) },
             pdf.bold,
         )
         pdf.text(
@@ -109,7 +114,7 @@ object PdfReport {
             PdfCharts.noiseTimeline(
                 pdf.canvas, rect, data.samples, data.events,
                 session.startEpochMs, endMs, offset, zone,
-            )
+            ) { hourFmt.format(Instant.ofEpochMilli(it)) }
             val legendItems = SomniaCategory.entries.map {
                 ReportLabels.category(context, it) to PdfCharts.argb(it)
             }
@@ -129,7 +134,7 @@ object PdfReport {
             val rect = pdf.block(100f)
             PdfCharts.verticalBars(
                 pdf.canvas, rect,
-                buckets.map { timeFmt.format(at(it.hourStartEpochMs)) to it.snoringMinutes },
+                buckets.map { hourFmt.format(at(it.hourStartEpochMs)) to it.snoringMinutes },
                 PdfCharts.argb(SomniaCategory.SNORING),
             ) { "%.1f".format(it) }
             pdf.wrapped(context.getString(R.string.pdf_hourly_caption), pdf.small)
@@ -215,7 +220,7 @@ object PdfReport {
         }
 
         // --- Perfil y cuestionarios ---
-        profileSection(context, pdf, data, stampFmt)
+        profileSection(context, pdf, data) { stampFmt.format(it) }
 
         // --- Detalles técnicos ---
         pdf.section(context.getString(R.string.pdf_tech_title))
@@ -236,7 +241,7 @@ object PdfReport {
         context: Context,
         pdf: PdfWriter,
         data: NightReportData,
-        stampFmt: DateTimeFormatter,
+        stamp: (Instant) -> String,
     ) {
         val profile = data.profile
         val facts = buildList {
@@ -261,7 +266,7 @@ object PdfReport {
                     context.getString(R.string.epworth_name),
                     it.score, 24,
                     ReportLabels.epworthLevel(context, it.riskLevel),
-                    stampFmt.format(Instant.ofEpochMilli(it.answeredEpochMs)),
+                    stamp(Instant.ofEpochMilli(it.answeredEpochMs)),
                 ),
             )
         }
@@ -272,7 +277,7 @@ object PdfReport {
                     context.getString(R.string.stopbang_name),
                     it.score, 8,
                     ReportLabels.stopBangLevel(context, it.riskLevel),
-                    stampFmt.format(Instant.ofEpochMilli(it.answeredEpochMs)),
+                    stamp(Instant.ofEpochMilli(it.answeredEpochMs)),
                 ),
             )
         }

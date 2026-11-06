@@ -56,4 +56,22 @@ class CsvReportTest {
         val csv = CsvReport.build(session, events, utc)
         assertTrue(csv.contains("\"hola, dijo \"\"algo\"\"\""))
     }
+
+    @Test
+    fun `en ingles cambian encabezado y categorias, no los numeros`() {
+        val session = Session(id = 1, startEpochMs = 0, endEpochMs = 3_600_000, calibrationDbOffset = 100.0)
+        val events = listOf(event(1, 5_000, 4_000, "snoring", dbPeak = -30.0, confidence = 0.9))
+        val lines = CsvReport.build(session, events, utc, CsvReport.ENGLISH).trim().split("\n")
+        assertEquals("date,time,category,duration_s,peak_db,confidence,transcript", lines[0])
+        assertEquals("1970-01-01,00:00:05,snoring,4.0,70,0.90,", lines[1])
+    }
+
+    @Test
+    fun `el idioma del CSV sigue al de la app`() {
+        assertEquals(CsvReport.SPANISH, CsvReport.labelsFor(java.util.Locale.forLanguageTag("es-MX")))
+        assertEquals(CsvReport.SPANISH, CsvReport.labelsFor(java.util.Locale.forLanguageTag("es-US")))
+        assertEquals(CsvReport.ENGLISH, CsvReport.labelsFor(java.util.Locale.forLanguageTag("en-US")))
+        // Otros idiomas caen en inglés, igual que los textos de la app.
+        assertEquals(CsvReport.ENGLISH, CsvReport.labelsFor(java.util.Locale.forLanguageTag("fr-FR")))
+    }
 }

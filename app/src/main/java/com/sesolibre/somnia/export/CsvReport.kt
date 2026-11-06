@@ -16,25 +16,59 @@ import kotlin.math.roundToInt
  */
 object CsvReport {
 
-    private val HEADER = listOf(
-        "fecha", "hora", "categoria", "duracion_s", "pico_db", "confianza", "transcripcion",
+    /**
+     * Encabezados y nombres de categoría del CSV en un idioma. Son claves de
+     * datos (sin acentos ni espacios) para que la hoja de cálculo no batalle.
+     */
+    data class Labels(val header: List<String>, val categories: Map<SomniaCategory?, String>)
+
+    val SPANISH = Labels(
+        header = listOf("fecha", "hora", "categoria", "duracion_s", "pico_db", "confianza", "transcripcion"),
+        categories = mapOf(
+            SomniaCategory.SNORING to "ronquido",
+            SomniaCategory.BREATHING to "respiracion",
+            SomniaCategory.COUGH to "tos",
+            SomniaCategory.SPEECH to "habla",
+            SomniaCategory.MOVEMENT to "movimiento",
+            SomniaCategory.ENVIRONMENT to "ambiente",
+            SomniaCategory.OTHER to "otro",
+            null to "sin_clasificar",
+        ),
     )
+
+    val ENGLISH = Labels(
+        header = listOf("date", "time", "category", "duration_s", "peak_db", "confidence", "transcript"),
+        categories = mapOf(
+            SomniaCategory.SNORING to "snoring",
+            SomniaCategory.BREATHING to "breathing",
+            SomniaCategory.COUGH to "cough",
+            SomniaCategory.SPEECH to "speech",
+            SomniaCategory.MOVEMENT to "movement",
+            SomniaCategory.ENVIRONMENT to "ambient",
+            SomniaCategory.OTHER to "other",
+            null to "unclassified",
+        ),
+    )
+
+    /** Español para cualquier variante de español; inglés para todo lo demás (igual que la app). */
+    fun labelsFor(locale: Locale): Labels = if (locale.language == "es") SPANISH else ENGLISH
 
     fun build(
         session: Session,
         events: List<SoundEvent>,
         zone: ZoneId = ZoneId.systemDefault(),
+        labels: Labels = SPANISH,
     ): String {
         val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(zone)
         val timeFmt = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(zone)
         val sb = StringBuilder()
-        sb.append(HEADER.joinToString(",")).append('\n')
+        sb.append(labels.header.joinToString(",")).append('\n')
         for (event in events.sortedBy { it.startEpochMs }) {
             val instant = Instant.ofEpochMilli(event.startEpochMs)
             val row = listOf(
                 dateFmt.format(instant),
                 timeFmt.format(instant),
-                categoryName(ApneaHeuristic.effectiveCategory(event)),
+                labels.categories.getValue(SomniaCategory.fromKey(ApneaHeuristic.effectiveCategory(event))),
                 String.format(Locale.US, "%.1f", event.durationMs / 1000.0),
                 (event.dbPeak + session.calibrationDbOffset).roundToInt().toString(),
                 event.confidence?.let { String.format(Locale.US, "%.2f", it) } ?: "",
@@ -51,15 +85,4 @@ object CsvReport {
         } else {
             field
         }
-
-    private fun categoryName(key: String?): String = when (SomniaCategory.fromKey(key)) {
-        SomniaCategory.SNORING -> "ronquido"
-        SomniaCategory.BREATHING -> "respiracion"
-        SomniaCategory.COUGH -> "tos"
-        SomniaCategory.SPEECH -> "habla"
-        SomniaCategory.MOVEMENT -> "movimiento"
-        SomniaCategory.ENVIRONMENT -> "ambiente"
-        SomniaCategory.OTHER -> "otro"
-        null -> "sin_clasificar"
-    }
 }

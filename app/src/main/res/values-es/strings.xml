@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos en español (values-es). Los de values/ (inglés) son el respaldo para otros idiomas. -->
+<resources>
+    <string name="app_name">SesoLibre Somnia</string>
+    <string name="home_tagline">Monitor nocturno de sueño — privado y local</string>
+
+    <string name="channel_monitor_name">Monitoreo nocturno</string>
+    <string name="channel_monitor_desc">Indica que el micrófono está activo durante la sesión de sueño</string>
+
+    <string name="notif_monitoring_title">Monitoreando tu sueño</string>
+    <string name="notif_monitoring_text">%1$s · %2$s</string>
+    <string name="notif_action_stop">Detener</string>
+    <string name="notif_monitor_lost_title">El monitoreo se detuvo solo</string>
+    <string name="notif_monitor_lost_text">Somnia perdió el micrófono a las %1$s y cerró la noche ahí. Lo grabado hasta ese momento está guardado. Suele pasar cuando otra app toma el micrófono o el sistema cierra la app para ahorrar batería.</string>
+
+    <string name="monitoring_active">Monitoreo activo</string>
+    <string name="monitoring_idle">Listo para monitorear</string>
+    <string name="monitoring_idle_hint">Inicia al acostarte. El audio se procesa en tu teléfono; nada sale del dispositivo.</string>
+    <string name="start_monitoring">Iniciar monitoreo</string>
+    <string name="stop_monitoring">Detener</string>
+    <string name="monitor_live_stats">%1$d min registrados · %2$s</string>
+    <string name="db_approx_format">%1$d dB (aprox.)</string>
+
+    <string name="night_title">Detalle de la noche</string>
+    <string name="back">Volver</string>
+    <string name="night_summary">Duración: %1$s · %2$s</string>
+    <string name="night_battery">Batería: %1$d%% → %2$d%%</string>
+    <string name="events_header">Eventos (%1$d)</string>
+    <string name="events_empty">No se detectaron eventos de sonido en esta sesión.</string>
+    <string name="event_detail">%1$s s · pico %2$d dB (aprox.)</string>
+    <string name="event_play">▶ Escuchar</string>
+    <string name="event_stop">■ Detener</string>
+    <string name="event_no_clip">sin clip</string>
+
+    <string name="cat_snoring">Ronquido</string>
+    <string name="cat_breathing">Respiración</string>
+    <string name="cat_cough">Tos</string>
+    <string name="cat_speech">Habla</string>
+    <string name="cat_movement">Movimiento</string>
+    <string name="cat_environment">Ambiente</string>
+    <string name="cat_other">Otro</string>
+    <string name="cat_unknown">Sin clasificar</string>
+
+    <string name="night_snore_summary">Ronquidos: %1$s · %2$s min</string>
+    <string name="night_peak">Pico de ruido: ~%1$d dB</string>
+    <string name="night_breakdown_title">Sonidos del cuerpo</string>
+    <string name="night_breakdown_empty">Sin sonidos del cuerpo clasificados esta noche.</string>
+    <string name="night_breakdown_environment">Ambiente: %1$d · Otros: %2$d</string>
+    <string name="night_chip_count">%1$s · %2$d</string>
+    <string name="night_breakdown_filter_hint">Toca una categoría para ver solo esos eventos en la lista.</string>
+    <string name="events_header_filtered">Eventos: %1$s (%2$d de %3$d)</string>
+    <string name="events_filter_clear">Ver todos</string>
+    <string name="trends_title">Tendencias</string>
+    <string name="home_open_trends">Ver tendencias</string>
+    <string name="trends_empty">Aún no hay suficientes noches. Registra varias noches para ver tus tendencias.</string>
+    <string name="trends_overview_title">Resumen</string>
+    <string name="trends_avg_snoring">Ronquido promedio: %1$s min/noche</string>
+    <string name="trends_avg_body">Sonidos del cuerpo: %1$s por noche</string>
+    <string name="trends_avg_duration">Duración promedio: %1$s</string>
+    <string name="trends_pause_nights">Patrón de pausas en %1$d de %2$s</string>
+    <string name="trends_snoring_chart">Minutos roncando por noche</string>
+    <string name="trends_chart_caption">Cada barra es una noche (de la más antigua a la más reciente); la altura son los minutos roncando. La fecha va debajo de cada barra.</string>
+    <string name="trends_bar_date_format">d/M</string>
+    <string name="trends_breakdown_title">Suma por noche</string>
+    <string name="trends_breakdown_help">Cuántos eventos de cada tipo se registraron en cada noche.</string>
+    <string name="trends_total_label">Total (%1$s)</string>
+    <string name="trends_total_snoring_min">%1$s min roncando</string>
+    <string name="trends_breakdown_row_date">%1$s</string>
+    <string name="trends_count_snoring">#ronquidos %1$d</string>
+    <string name="trends_count_cough">#tos %1$d</string>
+    <string name="trends_count_speech">#hablar %1$d</string>
+    <string name="trends_count_other">#otros %1$d</string>
+    <string name="trends_corr_title">Relación con tu bitácora</string>
+    <string name="trends_corr_empty">Registra noches con y sin cada etiqueta para ver correlaciones. No es causa-efecto, solo una pista para explorar.</string>
+    <string name="trends_corr_line">%1$s — con: %2$s min · sin: %3$s min (Δ %4$s)</string>
+    <string name="transcription_title">Transcribir habla</string>
+    <string name="transcription_help">Cuando un evento sea de habla, podrás transcribir lo que se dice. Se hace todo en el teléfono (offline); nada de audio ni texto sale del dispositivo. Requiere Android 13+ y el paquete de idioma instalado.</string>
+    <string name="transcription_download_languages">Descargar idiomas de voz (Ajustes de Android)</string>
+    <string name="transcription_action">Transcribir</string>
+    <string name="transcription_running">Transcribiendo…</string>
+    <string name="transcription_quote">«%1$s»</string>
+    <string name="transcription_empty">No se reconoció habla en este clip.</string>
+    <string name="transcription_unavailable">Transcripción no disponible en este dispositivo.</string>
+    <string name="transcription_failed">No se pudo transcribir.</string>
+    <string name="transcription_language_missing">Falta el paquete de idioma para transcribir; se está descargando. Vuelve a intentarlo en un momento (o instálalo en Ajustes de Android → Sistema → Idiomas → Voz).</string>
+    <string name="more_options">Más opciones</string>
+    <string name="session_delete_confirm_title">¿Eliminar esta noche?</string>
+    <string name="session_delete_confirm_body">Se borrarán la sesión y sus clips de audio. No se puede deshacer.</string>
+    <string name="export_csv">Exportar CSV</string>
+    <string name="export_pdf">Exportar PDF</string>
+    <string name="export_share">Compartir reporte</string>
+    <string name="export_col_date">Fecha</string>
+    <string name="export_col_snoring_min">Min ronq.</string>
+    <string name="export_col_events">Eventos</string>
+    <string name="export_totals">Totales</string>
+    <string name="export_file_night">somnia-noche</string>
+    <string name="export_file_trends">somnia-tendencias</string>
+
+    <string name="highlights_title">Lo más relevante de la noche</string>
+    <string name="highlight_pause_pattern">Ronquido antes de una pausa</string>
+    <string name="highlight_loud_snore">Ronquido más fuerte</string>
+    <string name="highlight_speech">Habla</string>
+    <string name="highlight_cough">Tos</string>
+    <string name="highlight_loudest">Sonido más fuerte</string>
+
+    <string name="recommendations_title">Recomendaciones</string>
+    <string name="recommendation_bullet">• %1$s</string>
+    <string name="recommendations_disclaimer">Sugerencias generales de higiene del sueño, no un diagnóstico médico.</string>
+    <string name="tip_pause_pattern">Se observaron pausas tras roncar. Si se repite, coméntalo con un médico (podría valer la pena un estudio de sueño).</string>
+    <string name="tip_alcohol">Bebiste alcohol y roncaste bastante: el alcohol relaja las vías respiratorias y suele empeorar el ronquido. Prueba evitarlo antes de dormir.</string>
+    <string name="tip_reduce_snoring">Roncaste bastante esta noche. Dormir de lado y mantener un peso saludable suelen reducir el ronquido.</string>
+    <string name="tip_late_dinner">Cenaste tarde. Cenar 2–3 h antes de acostarte mejora el descanso y reduce el reflujo.</string>
+    <string name="tip_caffeine">Tomaste cafeína. Evítala después del mediodía; puede tardar horas en eliminarse.</string>
+    <string name="tip_screen_late">Usaste pantallas antes de dormir. La luz azul retrasa el sueño; intenta apagarlas 30–60 min antes.</string>
+    <string name="tip_stress">Reportaste estrés. Una rutina de relajación (respiración, lectura) antes de acostarte puede ayudar.</string>
+    <string name="tip_short_sleep">Dormiste menos de 6 h. Procura una ventana de sueño más larga y horarios regulares.</string>
+    <string name="relabel_title">Corregir etiqueta</string>
+    <string name="cancel">Cancelar</string>
+
+    <string name="pause_pattern_title">Patrón de pausas observado</string>
+
+    <string name="battery_card_title">Optimización de batería</string>
+    <string name="battery_card_body">Para que el monitoreo no se interrumpa a media noche, quita la optimización de batería: en la pantalla que se abre entra a «Batería» (o «Uso de batería de la app») y elige «Sin restricciones».</string>
+    <string name="battery_card_action">Abrir ajustes de Somnia</string>
+
+    <string name="sessions_header">Noches registradas</string>
+    <string name="session_in_progress">en curso</string>
+    <string name="session_db_summary">Ruido: mín %1$d · prom %2$d · máx %3$d dB (aprox.)</string>
+    <string name="session_delete">Eliminar sesión</string>
+
+    <string name="mic_permission_needed">Somnia necesita el micrófono para monitorear tu sueño. Todo se procesa localmente.</string>
+
+    <!-- Ajustes -->
+    <string name="settings_title">Ajustes</string>
+    <string name="sensitivity_title">Sensibilidad de detección</string>
+    <string name="sensitivity_help">Un evento se registra cuando el sonido supera el ruido de fondo por este margen. Si duermes en un lugar ruidoso (calle transitada, ventilador fuerte) y se registran demasiados eventos, sube el valor; si se pierden ronquidos suaves, bájalo. Aplica a partir de la siguiente sesión.</string>
+    <string name="sensitivity_value">+%1$d dB sobre el ruido de fondo</string>
+    <string name="sensitivity_scale_hint">← más sensible (más eventos) · menos sensible (solo sonidos fuertes) →</string>
+    <string name="sensitivity_floor_note">El ruido constante (un ventilador, la calle) se absorbe solo: el detector adapta su nivel de fondo automáticamente.</string>
+    <string name="sensitivity_reset">Restablecer al valor recomendado (+%1$d dB)</string>
+
+    <!-- Horario de sueño -->
+    <string name="schedule_title">Horario de sueño</string>
+    <string name="schedule_help">Detén —y si quieres, inicia— el monitoreo automáticamente a tus horas habituales.</string>
+    <string name="schedule_bedtime">Hora de dormir</string>
+    <string name="schedule_wake">Hora de despertar</string>
+    <string name="schedule_time_value">%1$02d:%2$02d</string>
+    <string name="schedule_stop_note">El monitoreo se detiene solo cerca de tu hora de despertar (puede variar unos minutos para cuidar la batería). Si olvidas detenerlo, se cierra por ti.</string>
+    <string name="schedule_autostart">Iniciar monitoreo automáticamente</string>
+    <string name="schedule_autostart_help">Requiere haber concedido el permiso de micrófono al menos una vez. En algunos teléfonos el inicio puede tardar unos minutos.</string>
+    <string name="schedule_exact_alarm_warning">Android no permite que Somnia programe alarmas exactas, y sin eso el monitoreo no puede arrancar solo a tu hora de dormir. Concede «Alarmas y recordatorios» para activarlo.</string>
+    <string name="schedule_exact_alarm_action">Permitir alarmas exactas</string>
+    <string name="schedule_alt_toggle">Horario distinto ciertos días</string>
+    <string name="schedule_alt_help">Elige los días con otro horario (por ejemplo, el fin de semana). Cada día se refiere a la noche que empieza ese día: la noche del viernes termina el sábado por la mañana.</string>
+    <string name="schedule_alt_wake">Despertar (esos días)</string>
+    <string name="schedule_alt_bedtime">Dormir (esos días)</string>
+
+    <!-- Perfil -->
+    <string name="profile_title">Perfil</string>
+    <string name="profile_data_title">Tus datos</string>
+    <string name="profile_data_help">Opcionales. Sirven para prellenar el cuestionario STOP-Bang (IMC, edad, cuello, sexo). Nunca salen de tu teléfono.</string>
+    <string name="profile_name">Nombre</string>
+    <string name="profile_birth_year">Año de nacimiento</string>
+    <string name="profile_height_cm">Estatura (cm)</string>
+    <string name="profile_weight_kg">Peso (kg)</string>
+    <string name="profile_neck_cm">Cuello (cm)</string>
+    <string name="profile_sex">Sexo:</string>
+    <string name="profile_sex_female">Femenino</string>
+    <string name="profile_sex_male">Masculino</string>
+    <string name="profile_save">Guardar</string>
+
+    <!-- Acompañantes -->
+    <string name="companions_title">Acompañantes</string>
+    <string name="companions_sleeps_accompanied">Duermo con alguien más en la habitación</string>
+    <string name="companions_help">Los reportes avisarán que los sonidos pueden provenir de otras personas, y podrás atribuir eventos a cada quien.</string>
+    <string name="companions_add">+ Agregar acompañante</string>
+    <string name="companions_add_title">Agregar acompañante</string>
+    <string name="companions_name">Nombre o apodo</string>
+    <string name="companions_consent">Confirmo que avisé a esta persona que Somnia graba sonidos breves mientras dormimos y está de acuerdo.</string>
+    <string name="companions_add_confirm">Agregar</string>
+    <string name="companions_remove">Quitar</string>
+    <string name="multi_person_disclaimer">⚠ Duermes acompañado: los sonidos registrados pueden provenir de otras personas en la habitación.</string>
+
+    <!-- Cuestionarios -->
+    <string name="questionnaires_title">Cuestionarios</string>
+    <string name="questionnaires_disclaimer">Son herramientas de tamizaje, NO un diagnóstico. Comparte los resultados con tu médico.</string>
+    <string name="questionnaire_result_summary">Puntaje %1$d/%2$d · %3$s · %4$s</string>
+    <string name="questionnaire_not_answered">Sin responder</string>
+    <string name="questionnaire_answer">Responder</string>
+    <string name="questionnaire_answer_again">Repetir</string>
+    <string name="questionnaire_submit">Guardar resultado</string>
+
+    <string name="epworth_name">Escala de Epworth (somnolencia)</string>
+    <string name="epworth_intro">¿Qué tan probable es que dormites o te quedes dormido en estas situaciones? Responde pensando en tu vida reciente.</string>
+    <string name="epworth_level_normal">somnolencia normal</string>
+    <string name="epworth_level_mild">promedio alto</string>
+    <string name="epworth_level_moderate">somnolencia excesiva</string>
+    <string name="epworth_level_severe">somnolencia severa</string>
+
+    <string name="stopbang_name">STOP-Bang (riesgo de apnea)</string>
+    <string name="stopbang_intro">Responde sí o no. Los últimos cuatro se llenan solos si completaste tu perfil.</string>
+    <string name="stopbang_level_low">riesgo bajo</string>
+    <string name="stopbang_level_intermediate">riesgo intermedio</string>
+    <string name="stopbang_level_high">riesgo alto</string>
+
+    <!-- Bitácora nocturna -->
+    <string name="night_log_title">Bitácora de la noche</string>
+    <string name="night_log_help">¿Qué hubo hoy? Ayuda a encontrar correlaciones con tu sueño.</string>
+    <string name="night_log_note">Nota (opcional)</string>
+    <string name="night_log_save">Guardar</string>
+    <string name="night_log_empty">Sin bitácora para esta noche.</string>
+    <string name="night_log_add">Agregar bitácora</string>
+    <string name="night_log_edit">Editar</string>
+    <string name="tag_caffeine">Cafeína</string>
+    <string name="tag_alcohol">Alcohol</string>
+    <string name="tag_exercise">Ejercicio</string>
+    <string name="tag_late_dinner">Cena tarde</string>
+    <string name="tag_stress">Estrés</string>
+    <string name="tag_medication">Medicamento</string>
+    <string name="tag_sick">Enfermo</string>
+    <string name="tag_screen_late">Pantallas tarde</string>
+
+    <!-- Atribución de eventos -->
+    <string name="attribution_title">¿De quién fue este sonido?</string>
+    <string name="attribution_me">Mío</string>
+    <string name="attribution_of">de: %1$s</string>
+    <string name="attribution_assign">Quién</string>
+
+    <!-- Ajustes de UX (auditoría 2026-11) -->
+    <string name="db_estimate_note">Estimado: el micrófono del teléfono no está calibrado.</string>
+    <string name="session_card_snoring">%1$s · ronquido: %2$d (%3$s min)</string>
+    <string name="session_card_no_snoring">%1$s · sin ronquidos</string>
+    <string name="playback_failed">No se pudo reproducir este clip (el archivo puede estar dañado).</string>
+    <string name="events_header_partial">Eventos (%1$d de %2$d)</string>
+    <string name="events_show_other">Mostrar «Otro» (%1$d)</string>
+    <string name="events_hide_other">Ocultar «Otro»</string>
+    <string name="mic_blocked_title">Micrófono bloqueado</string>
+    <string name="mic_blocked_body">Android ya no volverá a preguntar por el micrófono. Para monitorear tu sueño, actívalo en Ajustes → Permisos → Micrófono. El audio se procesa solo en tu teléfono.</string>
+    <string name="mic_blocked_action">Abrir ajustes</string>
+
+    <!-- Bienvenida -->
+    <string name="welcome_title">Bienvenido a Somnia</string>
+    <string name="welcome_intro">Somnia escucha mientras duermes, detecta ronquidos, tos, habla y movimiento, y te muestra cómo fue tu noche. Antes de empezar:</string>
+    <string name="welcome_placement_title">📱 Dónde poner el teléfono</string>
+    <string name="welcome_placement_body">En el buró o mesita, a 30–60 cm de tu cabeza, con el micrófono (borde inferior) hacia ti. Déjalo conectado al cargador y no lo pongas bajo la almohada ni entre las sábanas.</string>
+    <string name="welcome_privacy_title">🔒 Tu privacidad</string>
+    <string name="welcome_privacy_body">No se graba la noche completa: solo clips cortos de cada sonido detectado. Todo se analiza y guarda en tu teléfono; el audio no se sube a ningún servidor ni se incluye en respaldos. Solo sale si tú decides enviarlo por correo.</string>
+    <string name="welcome_battery_title">🔋 Que no se detenga a media noche</string>
+    <string name="welcome_battery_body">Algunos teléfonos cierran apps en segundo plano para ahorrar batería. En los ajustes de Somnia, entra a «Batería» y elige «Sin restricciones».</string>
+    <string name="welcome_medical_title">⚕️ No es un dispositivo médico</string>
+    <string name="welcome_medical_body">Somnia orienta y documenta, pero no diagnostica. Si notas pausas al respirar o mucho cansancio de día, coméntalo con un médico; puedes enviarle el reporte desde la app.</string>
+    <string name="welcome_start">Empezar</string>
+
+    <!-- Envío por correo -->
+    <string name="report_email_title">Envío de reportes</string>
+    <string name="report_email_help">Correo al que se propone enviar los reportes y grabaciones (por ejemplo, el de tu médico). Siempre podrás cambiarlo antes de enviar.</string>
+    <string name="report_email_label">Correo del destinatario</string>
+    <string name="email_menu">Enviar por correo…</string>
+    <string name="email_clip_action">Enviar este clip por correo</string>
+    <string name="email_title">Enviar por correo</string>
+    <string name="email_include_pdf">Reporte PDF (gráficas, resumen y tabla de eventos)</string>
+    <string name="email_include_csv">Datos en CSV (un renglón por evento)</string>
+    <string name="email_audio_title">Grabaciones</string>
+    <string name="email_audio_none">Ninguna</string>
+    <string name="email_audio_single">Solo este clip</string>
+    <string name="email_audio_highlights">Lo más relevante</string>
+    <string name="email_audio_category">Solo %1$s</string>
+    <string name="email_audio_body">Sonidos del cuerpo</string>
+    <string name="email_audio_all">Todas</string>
+    <string name="email_size">≈ %1$s</string>
+    <string name="email_audio_note">Se envían amplificadas (como al escucharlas en la app) en formato M4A, que se abre en cualquier teléfono o computadora.</string>
+    <string name="email_size_warning">Muchos servicios de correo no aceptan más de 20–25 MB. Elige menos grabaciones si el envío falla.</string>
+    <string name="email_privacy_note">Los archivos saldrán de tu teléfono por tu app de correo. Envíalos solo a personas de confianza.</string>
+    <string name="email_prepare">Preparar correo</string>
+    <string name="email_preparing">Preparando el reporte y las grabaciones…</string>
+    <string name="email_chooser_title">Enviar con…</string>
+    <string name="email_no_app">No hay una app de correo configurada en el teléfono.</string>
+    <string name="email_failed">No se pudo preparar el correo.</string>
+    <string name="email_subject_night">Somnia — reporte de la noche del %1$s</string>
+    <string name="email_subject_clip">Somnia — grabación de la noche del %1$s</string>
+    <string name="email_subject_trends">Somnia — tendencias de sueño (noches: %1$d)</string>
+    <string name="email_intro">Reporte de sueño de Somnia — noche del %1$s.</string>
+    <string name="email_line_duration">Duración: %1$s</string>
+    <string name="email_line_body">Sonidos del cuerpo: %1$d · eventos detectados en total: %2$d</string>
+    <string name="email_line_snoring">Ronquidos: %1$d (%2$s min en total)</string>
+    <string name="email_line_pauses">Patrón ronquido → pausa → reanudación: %1$d</string>
+    <string name="email_line_log">Bitácora: %1$s</string>
+    <string name="email_clips_header">Grabaciones adjuntas:</string>
+    <string name="email_clip_line">%1$s · %2$s · %3$s s · pico %4$d dB</string>
+    <string name="email_clips_note">Los clips van amplificados para que se escuchen; los dB son aproximados (micrófono de teléfono sin calibrar).</string>
+    <string name="email_pdf_note">El PDF adjunto incluye la gráfica de ruido de la noche, el ronquido por hora, el desglose por categoría y la tabla de eventos.</string>
+    <string name="email_disclaimer">Generado con Somnia (SesoLibre). No es un dispositivo médico ni un diagnóstico.</string>
+    <string name="email_trends_body">Tendencias de sueño de Somnia. Noches registradas: %1$d.\nRonquido promedio: %2$s min por noche.\nSonidos del cuerpo: %3$s por noche.\nNoches con patrón de pausas: %4$d.\n\nSe adjuntan el reporte PDF (con gráficas) y los datos en CSV.</string>
+
+    <!-- Reporte PDF -->
+    <string name="pdf_footer">SesoLibre Somnia · No es un dispositivo médico ni un diagnóstico</string>
+    <string name="pdf_night_title">Reporte de la noche</string>
+    <string name="pdf_night_range">De %1$s a %2$s · generado el %3$s</string>
+    <string name="pdf_person">Persona: %1$s</string>
+    <string name="pdf_tile_duration">Duración</string>
+    <string name="pdf_tile_body">Sonidos cuerpo</string>
+    <string name="pdf_tile_snoring_min">Min roncando</string>
+    <string name="pdf_tile_snoring_events">Ronquidos</string>
+    <string name="pdf_tile_pauses">Pausas tras roncar</string>
+    <string name="pdf_tile_peak">Pico dB (aprox.)</string>
+    <string name="pdf_timeline_title">Ruido y eventos durante la noche</string>
+    <string name="pdf_timeline_caption">La línea es el nivel promedio por minuto y la franja sombreada va del mínimo al máximo. Arriba, cada punto es un evento detectado, del color de su categoría (los puntos grandes son sonidos del cuerpo).</string>
+    <string name="pdf_no_samples">Sin datos de ruido suficientes para graficar.</string>
+    <string name="pdf_hourly_title">Minutos roncando por hora</string>
+    <string name="pdf_hourly_caption">Cada barra es una hora de la noche; la altura son los minutos con ronquido detectado.</string>
+    <string name="pdf_no_snoring">No se detectaron ronquidos esta noche.</string>
+    <string name="pdf_breakdown_title">Eventos por categoría</string>
+    <string name="pdf_highlight_line">%1$s · %2$s (%3$s, %4$s s, pico %5$d dB)</string>
+    <string name="pdf_pause_line">• %1$s — pausa de %2$d s tras roncar</string>
+    <string name="pdf_more_items">… y %1$d más.</string>
+    <string name="pdf_profile_title">Perfil y cuestionarios</string>
+    <string name="pdf_profile_age">Edad: %1$d</string>
+    <string name="pdf_profile_bmi">IMC %1$s</string>
+    <string name="pdf_profile_neck">Cuello %1$d cm</string>
+    <string name="pdf_questionnaire_line">%1$s: %2$d/%3$d · %4$s (%5$s)</string>
+    <string name="pdf_tech_title">Detalles de la grabación</string>
+    <string name="pdf_clips_saved">Clips de audio guardados / eventos: %1$d / %2$d</string>
+    <string name="pdf_db_note">Los dB son aproximados: el micrófono del teléfono no está calibrado. Sirven para comparar noches entre sí, no como medición absoluta.</string>
+    <string name="pdf_events_title">Tabla de eventos</string>
+    <string name="pdf_events_omitted">Eventos «Otro» omitidos (ruido ambiguo sin categoría clara): %1$d.</string>
+    <string name="pdf_events_legend">Conf.: confianza del clasificador (0–1). Etiqueta: clase de sonido de YAMNet. ✎: categoría corregida a mano.</string>
+    <string name="pdf_col_time">Hora</string>
+    <string name="pdf_col_category">Categoría</string>
+    <string name="pdf_col_duration">Duración</string>
+    <string name="pdf_col_peak">Pico dB</string>
+    <string name="pdf_col_conf">Conf.</string>
+    <string name="pdf_col_label">Etiqueta</string>
+    <string name="pdf_col_who">Quién</string>
+    <string name="pdf_col_clip">Clip</string>
+    <string name="pdf_yes">sí</string>
+    <string name="pdf_no">no</string>
+    <string name="pdf_trends_title">Tendencias de sueño</string>
+    <string name="pdf_trends_range">Del %1$s al %2$s</string>
+    <string name="pdf_tile_nights">Noches</string>
+    <string name="pdf_tile_avg_duration">Duración prom.</string>
+    <string name="pdf_tile_avg_snoring">Min roncando/noche</string>
+    <string name="pdf_tile_avg_body">Sonidos cuerpo/noche</string>
+    <string name="pdf_tile_pause_nights">Noches con pausas</string>
+    <string name="pdf_trends_body_chart">Sonidos del cuerpo por noche</string>
+    <string name="pdf_corr_note">Promedio de minutos roncando en las noches con cada etiqueta de la bitácora frente a las noches sin ella. Es una correlación, no causa-efecto.</string>
+</resources>

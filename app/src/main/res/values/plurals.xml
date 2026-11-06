@@ -1,31 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Inglés (por defecto). La versión en español vive en values-es/plurals.xml. -->
 <resources>
     <plurals name="events_detected">
-        <item quantity="one">%d evento detectado</item>
-        <item quantity="other">%d eventos detectados</item>
+        <item quantity="one">%d event detected</item>
+        <item quantity="other">%d events detected</item>
     </plurals>
     <plurals name="sound_events">
-        <item quantity="one">%d evento de sonido</item>
-        <item quantity="other">%d eventos de sonido</item>
+        <item quantity="one">%d sound event</item>
+        <item quantity="other">%d sound events</item>
     </plurals>
     <plurals name="events_count">
-        <item quantity="one">%d evento</item>
-        <item quantity="other">%d eventos</item>
+        <item quantity="one">%d event</item>
+        <item quantity="other">%d events</item>
     </plurals>
     <plurals name="nights_count">
-        <item quantity="one">%d noche</item>
-        <item quantity="other">%d noches</item>
+        <item quantity="one">%d night</item>
+        <item quantity="other">%d nights</item>
     </plurals>
     <plurals name="trends_nights">
-        <item quantity="one">%d noche registrada</item>
-        <item quantity="other">%d noches registradas</item>
+        <item quantity="one">%d night recorded</item>
+        <item quantity="other">%d nights recorded</item>
     </plurals>
     <plurals name="pause_pattern_body">
-        <item quantity="one">Se observó %d secuencia de ronquido → pausa larga → reanudación brusca. Esto NO es un diagnóstico; si se repite con frecuencia, coméntalo con un médico.</item>
-        <item quantity="other">Se observaron %d secuencias de ronquido → pausa larga → reanudación brusca. Esto NO es un diagnóstico; si se repite con frecuencia, coméntalo con un médico.</item>
+        <item quantity="one">%d snoring → long pause → abrupt resumption sequence was observed. This is NOT a diagnosis; if it happens often, talk to a doctor.</item>
+        <item quantity="other">%d snoring → long pause → abrupt resumption sequences were observed. This is NOT a diagnosis; if it happens often, talk to a doctor.</item>
     </plurals>
     <plurals name="email_clip_count">
-        <item quantity="one">%d grabación</item>
-        <item quantity="other">%d grabaciones</item>
+        <item quantity="one">%d recording</item>
+        <item quantity="other">%d recordings</item>
     </plurals>
 </resources>

@@ -13,7 +13,6 @@ import com.sesolibre.somnia.stats.NightSummary
 import com.sesolibre.somnia.ui.components.categoryColor
 import java.time.Instant
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -51,6 +50,7 @@ internal object PdfCharts {
         endEpochMs: Long,
         calibrationOffset: Double,
         zone: ZoneId,
+        hourLabel: (Long) -> String,
     ) {
         val span = (endEpochMs - startEpochMs).coerceAtLeast(60_000L).toFloat()
         val axisW = 26f
@@ -73,7 +73,6 @@ internal object PdfCharts {
         canvas.drawText("dB", rect.left, plot.top - 2f, axisText)
 
         // Eje x: una marca por hora en punto.
-        val hourFmt = DateTimeFormatter.ofPattern("HH:mm").withZone(zone)
         val hourMs = 3_600_000L
         val offsetMs = zone.rules.getOffset(Instant.ofEpochMilli(startEpochMs)).totalSeconds * 1000L
         var h = Math.floorDiv(startEpochMs + offsetMs, hourMs) * hourMs - offsetMs + hourMs
@@ -83,7 +82,7 @@ internal object PdfCharts {
             if (i % every == 0) {
                 val x = xAt(h)
                 canvas.drawLine(x, plot.top, x, plot.bottom, grid)
-                val label = hourFmt.format(Instant.ofEpochMilli(h))
+                val label = hourLabel(h)
                 canvas.drawText(label, x - axisText.measureText(label) / 2, rect.bottom, axisText)
             }
             h += hourMs; i++

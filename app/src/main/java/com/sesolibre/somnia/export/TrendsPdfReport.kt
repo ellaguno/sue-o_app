@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.export
 
+import com.sesolibre.somnia.util.LocalDates
 import android.content.Context
 import com.sesolibre.somnia.R
 import com.sesolibre.somnia.ml.SomniaCategory
@@ -10,7 +11,6 @@ import java.io.File
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /**
  * Reporte PDF de tendencias: resumen en tarjetas, gráficas por noche
@@ -30,10 +30,10 @@ object TrendsPdfReport {
         correlations: List<TagEffect> = emptyList(),
         zone: ZoneId = ZoneId.systemDefault(),
     ): File {
-        val es = Locale("es")
-        val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd", es).withZone(zone)
-        val shortFmt = DateTimeFormatter.ofPattern("d/M", es).withZone(zone)
-        val longFmt = DateTimeFormatter.ofPattern("d MMM yyyy", es).withZone(zone)
+        // En el idioma de la app; la tabla usa fecha ISO, que no es ambigua en ningún idioma.
+        val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(zone)
+        val shortFmt = LocalDates.formatter(context, "dM", zone)
+        val longFmt = LocalDates.formatter(context, "dMMMyyyy", zone)
         val nights = metrics.sortedBy { it.startEpochMs }
         fun at(ms: Long) = Instant.ofEpochMilli(ms)
 

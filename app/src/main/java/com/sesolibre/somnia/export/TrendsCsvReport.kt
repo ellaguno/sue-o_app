@@ -12,18 +12,28 @@ import java.util.Locale
  */
 object TrendsCsvReport {
 
-    private val HEADER = listOf(
+    val SPANISH_HEADER = listOf(
         "fecha", "duracion_min", "ronquidos_n", "ronquidos_min", "tos_n", "habla_n",
         "otros_n", "eventos_total", "pico_db", "patron_pausas_n", "etiquetas",
     )
 
+    val ENGLISH_HEADER = listOf(
+        "date", "duration_min", "snoring_n", "snoring_min", "cough_n", "speech_n",
+        "other_n", "events_total", "peak_db", "pause_pattern_n", "tags",
+    )
+
+    /** Español para cualquier variante de español; inglés para todo lo demás (igual que la app). */
+    fun headerFor(locale: Locale): List<String> =
+        if (locale.language == "es") SPANISH_HEADER else ENGLISH_HEADER
+
     fun build(
         metrics: List<NightMetrics>,
         zone: ZoneId = ZoneId.systemDefault(),
+        header: List<String> = SPANISH_HEADER,
     ): String {
         val dateFmt = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(zone)
         val sb = StringBuilder()
-        sb.append(HEADER.joinToString(",")).append('\n')
+        sb.append(header.joinToString(",")).append('\n')
         val nights = metrics.sortedBy { it.startEpochMs }
         for (m in nights) {
             val row = listOf(

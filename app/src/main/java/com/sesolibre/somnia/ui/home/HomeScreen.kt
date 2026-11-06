@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.ui.home
 
+import com.sesolibre.somnia.util.LocalDates
 import androidx.compose.ui.res.pluralStringResource
 import android.content.Context
 import android.content.Intent
@@ -329,7 +330,9 @@ private fun isIgnoringBatteryOptimizations(context: Context): Boolean =
 private fun SessionCard(item: SessionWithStats, onClick: () -> Unit) {
     val s = item.session
     val zone = remember { ZoneId.systemDefault() }
-    val dateFmt = remember { DateTimeFormatter.ofPattern("EEE d MMM · HH:mm", Locale.getDefault()) }
+    val context = LocalContext.current
+    val dayFmt = remember { LocalDates.formatter(context, "EEEdMMM", zone) }
+    val timeFmt = remember { LocalDates.time(context, zone = zone) }
     val start = Instant.ofEpochMilli(s.startEpochMs).atZone(zone)
     val durationMin = s.endEpochMs?.let { (it - s.startEpochMs) / 60_000 }
 
@@ -339,7 +342,7 @@ private fun SessionCard(item: SessionWithStats, onClick: () -> Unit) {
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(dateFmt.format(start), style = MaterialTheme.typography.titleSmall)
+                Text("${dayFmt.format(start)} · ${timeFmt.format(start)}", style = MaterialTheme.typography.titleSmall)
                 Text(
                     durationMin?.let { "%dh %02dm".format(it / 60, it % 60) }
                         ?: stringResource(R.string.session_in_progress),

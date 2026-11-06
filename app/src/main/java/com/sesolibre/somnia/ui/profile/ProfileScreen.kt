@@ -1,5 +1,7 @@
 package com.sesolibre.somnia.ui.profile
 
+import androidx.compose.ui.platform.LocalContext
+import com.sesolibre.somnia.util.LocalDates
 import com.sesolibre.somnia.ui.components.BackButton
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -370,7 +372,8 @@ private fun QuestionnaireRow(
     onOpen: () -> Unit,
 ) {
     val zone = remember { ZoneId.systemDefault() }
-    val dateFmt = remember { DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()) }
+    val context = LocalContext.current
+    val dateFmt = remember { LocalDates.formatter(context, "dMMMyyyy", zone) }
 
     Row(
         Modifier.fillMaxWidth(),

@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.ui.trends
 
+import com.sesolibre.somnia.util.LocalDates
 import com.sesolibre.somnia.R
 import com.sesolibre.somnia.data.prefs.SettingsRepository
 import com.sesolibre.somnia.export.EmailDraft
@@ -55,6 +56,10 @@ class TrendsViewModel @Inject constructor(
 
     fun clearShareRequest() { _shareRequest.value = null }
 
+    private fun trendsFileBase(): String = appContext.getString(R.string.export_file_trends)
+
+    private fun csvHeader(): List<String> = TrendsCsvReport.headerFor(LocalDates.locale(appContext))
+
     private fun exportsDir(): File = File(appContext.cacheDir, "exports").apply { mkdirs() }
 
     fun exportCsv() {
@@ -62,8 +67,8 @@ class TrendsViewModel @Inject constructor(
         if (current.isEmpty()) return
         viewModelScope.launch {
             val file = withContext(Dispatchers.IO) {
-                File(exportsDir(), "somnia-tendencias.csv").apply {
-                    writeText(TrendsCsvReport.build(current))
+                File(exportsDir(), "${trendsFileBase()}.csv").apply {
+                    writeText(TrendsCsvReport.build(current, header = csvHeader()))
                 }
             }
             _shareRequest.value = ShareRequest(file, "text/csv")
@@ -77,7 +82,7 @@ class TrendsViewModel @Inject constructor(
             val file = withContext(Dispatchers.IO) {
                 TrendsPdfReport.render(
                     context = appContext,
-                    outFile = File(exportsDir(), "somnia-tendencias.pdf"),
+                    outFile = File(exportsDir(), "${trendsFileBase()}.pdf"),
                     metrics = current,
                     overview = overview.value,
                     correlations = correlations.value,
@@ -100,10 +105,10 @@ class TrendsViewModel @Inject constructor(
             _emailDraft.value = withContext(Dispatchers.IO) {
                 val dir = File(exportsDir(), "email").apply { deleteRecursively(); mkdirs() }
                 val pdf = TrendsPdfReport.render(
-                    appContext, File(dir, "somnia-tendencias.pdf"),
+                    appContext, File(dir, "${trendsFileBase()}.pdf"),
                     current, overview.value, correlations.value,
                 )
-                val csv = File(dir, "somnia-tendencias.csv").apply { writeText(TrendsCsvReport.build(current)) }
+                val csv = File(dir, "${trendsFileBase()}.csv").apply { writeText(TrendsCsvReport.build(current, header = csvHeader())) }
                 val o = overview.value
                 EmailDraft(
                     to = settings.reportEmail.first(),
