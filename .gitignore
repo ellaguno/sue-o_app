@@ -32,3 +32,23 @@ assets/fondo.png
 assets/sesolibre_somnia.jpg
 assets/somnia_feature_graphic_1024x500.png
 docs/blog-lanzamiento-somnia.md
+
+# Firma de Apple: nunca al repo (los secrets viven en GitHub Actions)
+*.p12
+*.p8
+*.key
+*.mobileprovision
+*.cer
+*.certSigningRequest
+*.csr
+AuthKey_*.p8
+
+# iOS: proyecto de Xcode generado por XcodeGen y artefactos de compilación
+ios/*.xcodeproj/
+ios/build/
+ios/DerivedData/
+*.ipa
+*.dSYM.zip
+
+# Python
+__pycache__/

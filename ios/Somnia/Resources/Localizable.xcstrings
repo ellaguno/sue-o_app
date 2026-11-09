@@ -1,0 +1,826 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "%.1f s · peak %lld dB (approx.)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%.1f s · pico %lld dB (aprox.)"
+          }
+        }
+      }
+    },
+    "%lld dB (approx.)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dB (aprox.)"
+          }
+        }
+      }
+    },
+    "%lld events · no snoring": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld eventos · sin ronquidos"
+          }
+        }
+      }
+    },
+    "%lld events · snoring: %lld (%.1f min)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld eventos · ronquido: %lld (%.1f min)"
+          }
+        }
+      }
+    },
+    "%lld min recorded · %lld events detected": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld min registrados · %lld eventos detectados"
+          }
+        }
+      }
+    },
+    "%lld snoring → long pause → abrupt resumption sequences were observed. This is NOT a diagnosis; if it happens often, talk to a doctor.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se observaron %lld secuencias de ronquido → pausa larga → reanudación brusca. Esto NO es un diagnóstico; si se repite con frecuencia, coméntalo con un médico."
+          }
+        }
+      }
+    },
+    "+%lld dB above background noise": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld dB sobre el ruido de fondo"
+          }
+        }
+      }
+    },
+    "Ambient": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ambiente"
+          }
+        }
+      }
+    },
+    "Ambient: %lld · Other: %lld": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ambiente: %lld · Otros: %lld"
+          }
+        }
+      }
+    },
+    "An event is recorded when sound rises above the background noise by this margin. If you sleep somewhere noisy and too many events are recorded, raise it; if soft snores are missed, lower it. Applies from the next session.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un evento se registra cuando el sonido supera el ruido de fondo por este margen. Si duermes en un lugar ruidoso y se registran demasiados eventos, sube el valor; si se pierden ronquidos suaves, bájalo. Aplica a partir de la siguiente sesión."
+          }
+        }
+      }
+    },
+    "Average duration: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duración promedio: %@"
+          }
+        }
+      }
+    },
+    "Average snoring: %.1f min/night": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ronquido promedio: %.1f min/noche"
+          }
+        }
+      }
+    },
+    "Battery: %lld%% → %lld%%": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batería: %lld%% → %lld%%"
+          }
+        }
+      }
+    },
+    "Body sounds": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonidos del cuerpo"
+          }
+        }
+      }
+    },
+    "Body sounds per night": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonidos del cuerpo por noche"
+          }
+        }
+      }
+    },
+    "Body sounds: %.1f per night": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonidos del cuerpo: %.1f por noche"
+          }
+        }
+      }
+    },
+    "Breathing": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Respiración"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
+          }
+        }
+      }
+    },
+    "Cough": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tos"
+          }
+        }
+      }
+    },
+    "Couldn’t play this clip (the file may be damaged).": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo reproducir este clip (el archivo puede estar dañado)."
+          }
+        }
+      }
+    },
+    "Delete session": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar sesión"
+          }
+        }
+      }
+    },
+    "Delete this night?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar esta noche?"
+          }
+        }
+      }
+    },
+    "Detection sensitivity": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sensibilidad de detección"
+          }
+        }
+      }
+    },
+    "Duration: %@ · %lld sound events": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duración: %@ · %lld eventos de sonido"
+          }
+        }
+      }
+    },
+    "Estimate: the phone’s microphone isn’t calibrated.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estimado: el micrófono del teléfono no está calibrado."
+          }
+        }
+      }
+    },
+    "Events": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eventos"
+          }
+        }
+      }
+    },
+    "Events (%lld of %lld)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eventos (%lld de %lld)"
+          }
+        }
+      }
+    },
+    "Get started": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar"
+          }
+        }
+      }
+    },
+    "Hide “Other”": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocultar «Otro»"
+          }
+        }
+      }
+    },
+    "Keep it running all night": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Que no se detenga a media noche"
+          }
+        }
+      }
+    },
+    "Listen": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escuchar"
+          }
+        }
+      }
+    },
+    "Max": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máx"
+          }
+        }
+      }
+    },
+    "Microphone blocked": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Micrófono bloqueado"
+          }
+        }
+      }
+    },
+    "Min": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mín"
+          }
+        }
+      }
+    },
+    "Minutes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutos"
+          }
+        }
+      }
+    },
+    "Minutes snoring per night": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minutos roncando por noche"
+          }
+        }
+      }
+    },
+    "Monitoring": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Monitoreo activo"
+          }
+        }
+      }
+    },
+    "More options": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Más opciones"
+          }
+        }
+      }
+    },
+    "Movement": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Movimiento"
+          }
+        }
+      }
+    },
+    "Night": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noche"
+          }
+        }
+      }
+    },
+    "No body sounds classified tonight.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin sonidos del cuerpo clasificados esta noche."
+          }
+        }
+      }
+    },
+    "No sound events were detected in this session.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se detectaron eventos de sonido en esta sesión."
+          }
+        }
+      }
+    },
+    "Not a medical device": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No es un dispositivo médico"
+          }
+        }
+      }
+    },
+    "Not enough nights yet. Record a few nights to see your trends.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aún no hay suficientes noches. Registra varias noches para ver tus tendencias."
+          }
+        }
+      }
+    },
+    "OK": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "On the nightstand, 30–60 cm (1–2 ft) from your head, with the microphone (bottom edge) facing you. Keep it plugged into the charger and don’t put it under the pillow.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En el buró o mesita, a 30–60 cm de tu cabeza, con el micrófono (borde inferior) hacia ti. Déjalo conectado al cargador y no lo pongas bajo la almohada."
+          }
+        }
+      }
+    },
+    "Open settings": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir ajustes"
+          }
+        }
+      }
+    },
+    "Other": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otro"
+          }
+        }
+      }
+    },
+    "Pause pattern in %lld of %lld nights": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Patrón de pausas en %lld de %lld noches"
+          }
+        }
+      }
+    },
+    "Pause pattern observed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Patrón de pausas observado"
+          }
+        }
+      }
+    },
+    "Ready to monitor": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo para monitorear"
+          }
+        }
+      }
+    },
+    "Recorded nights": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noches registradas"
+          }
+        }
+      }
+    },
+    "Reset to the recommended value (+12 dB)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Restablecer al valor recomendado (+12 dB)"
+          }
+        }
+      }
+    },
+    "Settings": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes"
+          }
+        }
+      }
+    },
+    "Show all": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver todos"
+          }
+        }
+      }
+    },
+    "Show “Other”": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar «Otro»"
+          }
+        }
+      }
+    },
+    "Snoring": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ronquido"
+          }
+        }
+      }
+    },
+    "Snoring: %lld events · %.1f min": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ronquidos: %lld eventos · %.1f min"
+          }
+        }
+      }
+    },
+    "Somnia guides and documents, but doesn’t diagnose. If you notice breathing pauses or a lot of daytime tiredness, talk to a doctor.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Somnia orienta y documenta, pero no diagnostica. Si notas pausas al respirar o mucho cansancio de día, coméntalo con un médico."
+          }
+        }
+      }
+    },
+    "Somnia listens while you sleep, detects snoring, coughing, speech and movement, and shows you how your night went. Before you start:": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Somnia escucha mientras duermes, detecta ronquidos, tos, habla y movimiento, y te muestra cómo fue tu noche. Antes de empezar:"
+          }
+        }
+      }
+    },
+    "Speech": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Habla"
+          }
+        }
+      }
+    },
+    "Start monitoring": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar monitoreo"
+          }
+        }
+      }
+    },
+    "Start monitoring and lock the phone: Somnia keeps listening in the background. Avoid closing it from the app switcher.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia el monitoreo y bloquea el teléfono: Somnia sigue escuchando en segundo plano. Evita cerrarla desde el selector de apps."
+          }
+        }
+      }
+    },
+    "Start when you go to bed. Audio is processed on your phone; nothing leaves the device.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia al acostarte. El audio se procesa en tu teléfono; nada sale del dispositivo."
+          }
+        }
+      }
+    },
+    "Stop": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detener"
+          }
+        }
+      }
+    },
+    "Summary": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumen"
+          }
+        }
+      }
+    },
+    "The session and its audio clips will be deleted. This can’t be undone.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se borrarán la sesión y sus clips de audio. No se puede deshacer."
+          }
+        }
+      }
+    },
+    "The whole night isn’t recorded: only short clips of each detected sound. Everything is analyzed and stored on your phone; audio isn’t uploaded to any server or included in backups.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se graba la noche completa: solo clips cortos de cada sonido detectado. Todo se analiza y guarda en tu teléfono; el audio no se sube a ningún servidor ni se incluye en respaldos."
+          }
+        }
+      }
+    },
+    "Time": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hora"
+          }
+        }
+      }
+    },
+    "To monitor your sleep, allow microphone access for Somnia in Settings. Audio is processed only on your phone.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para monitorear tu sueño, permite el acceso al micrófono para Somnia en Ajustes. El audio se procesa solo en tu teléfono."
+          }
+        }
+      }
+    },
+    "Trends": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tendencias"
+          }
+        }
+      }
+    },
+    "View trends": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ver tendencias"
+          }
+        }
+      }
+    },
+    "Welcome to Somnia": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bienvenido a Somnia"
+          }
+        }
+      }
+    },
+    "Where to put the phone": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dónde poner el teléfono"
+          }
+        }
+      }
+    },
+    "Your privacy": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tu privacidad"
+          }
+        }
+      }
+    },
+    "in progress": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "en curso"
+          }
+        }
+      }
+    },
+    "no clip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sin clip"
+          }
+        }
+      }
+    },
+    "← more sensitive (more events) · less sensitive (loud sounds only) →": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "← más sensible (más eventos) · menos sensible (solo sonidos fuertes) →"
+          }
+        }
+      }
+    },
+    "%lld nights recorded": {
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld night recorded"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld nights recorded"
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld noche registrada"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld noches registradas"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

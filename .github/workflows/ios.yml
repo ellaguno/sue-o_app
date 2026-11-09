@@ -1,0 +1,145 @@
+name: iOS (TestFlight)
+
+# Compila, firma y sube la app de iOS a TestFlight.
+# - Etiqueta `ios-v1.2.3` (la versión se toma de la etiqueta) o a mano desde Actions.
+# - Se usa `ios-v*` y no `v*` porque `v*` ya dispara el release de Android.
+# - Build number = github.run_number (único y creciente en este workflow).
+on:
+  push:
+    tags:
+      - "ios-v*"
+  workflow_dispatch:
+    inputs:
+      upload:
+        description: "Subir a TestFlight"
+        type: boolean
+        default: true
+
+concurrency:
+  group: ios-release
+  cancel-in-progress: false
+
+jobs:
+  testflight:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: ios
+    env:
+      BUILD_NUMBER: ${{ github.run_number }}
+      KEYCHAIN: ${{ runner.temp }}/somnia.keychain-db
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Elegir el Xcode más reciente
+        run: |
+          ls -d /Applications/Xcode*.app
+          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Versión
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/ios-v* ]]; then
+            VERSION="${GITHUB_REF#refs/tags/ios-v}"
+          else
+            VERSION=$(sed -nE 's/^ *MARKETING_VERSION: *"([^"]+)".*/\1/p' project.yml | head -1)
+          fi
+          echo "MARKETING_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "Versión $VERSION, build $BUILD_NUMBER"
+
+      - name: Generar el proyecto (XcodeGen)
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Pruebas unitarias (simulador)
+        run: |
+          set -o pipefail
+          SIM=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          for runtime in sorted(devices, reverse=True):
+              if "iOS" in runtime:
+                  for d in devices[runtime]:
+                      if d["name"].startswith("iPhone"):
+                          print(d["udid"]); sys.exit()
+          ')
+          echo "Simulador: $SIM"
+          xcodebuild test -project Somnia.xcodeproj -scheme Somnia \
+            -destination "id=$SIM" CODE_SIGNING_ALLOWED=NO -quiet
+
+      - name: Certificado de distribución en un keychain temporal
+        env:
+          APPLE_CERT_P12_BASE64: ${{ secrets.APPLE_CERT_P12_BASE64 }}
+          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          P12="$RUNNER_TEMP/dist.p12"
+          echo "$APPLE_CERT_P12_BASE64" | base64 --decode > "$P12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$P12" -P "$APPLE_CERT_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN" > /dev/null
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm -f "$P12"
+          security find-identity -v -p codesigning "$KEYCHAIN"
+
+      - name: Perfil de aprovisionamiento (API de App Store Connect)
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install -q pyjwt cryptography requests
+          PROFILE="$RUNNER_TEMP/somnia.mobileprovision"
+          "$RUNNER_TEMP/venv/bin/python" scripts/asc.py profile com.sesolibre.somnia "Somnia App Store" "$PROFILE"
+          UUID=$(security cms -D -i "$PROFILE" | plutil -extract UUID raw -)
+          for dir in "$HOME/Library/MobileDevice/Provisioning Profiles" \
+                     "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
+            mkdir -p "$dir"
+            cp "$PROFILE" "$dir/$UUID.mobileprovision"
+          done
+
+      - name: Archivar (Release)
+        run: |
+          set -o pipefail
+          xcodebuild archive -project Somnia.xcodeproj -scheme Somnia -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/Somnia.xcarchive" \
+            MARKETING_VERSION="$MARKETING_VERSION" CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN" -quiet
+
+      - name: Exportar el .ipa
+        run: |
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Somnia.xcarchive" \
+            -exportOptionsPlist ExportOptions.plist -exportPath "$RUNNER_TEMP/export"
+          ls -la "$RUNNER_TEMP/export"
+
+      - name: Guardar el .ipa como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: somnia-ios-${{ env.MARKETING_VERSION }}-${{ env.BUILD_NUMBER }}
+          path: ${{ runner.temp }}/export/*.ipa
+          if-no-files-found: error
+
+      - name: Subir a TestFlight
+        if: github.event_name == 'push' || inputs.upload
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+        run: |
+          mkdir -p "$HOME/private_keys"
+          printf '%s' "$ASC_PRIVATE_KEY" > "$HOME/private_keys/AuthKey_$ASC_KEY_ID.p8"
+          xcrun altool --upload-app --type ios --file "$RUNNER_TEMP/export/Somnia.ipa" \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+
+      - name: Limpiar llaves y keychain
+        if: always()
+        run: |
+          security delete-keychain "$KEYCHAIN" 2>/dev/null || true
+          rm -rf "$HOME/private_keys" "$RUNNER_TEMP/somnia.mobileprovision"
