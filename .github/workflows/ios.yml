@@ -115,6 +115,17 @@ jobs:
             MARKETING_VERSION="$MARKETING_VERSION" CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN" -quiet
 
+      - name: Verificar el Info.plist compilado
+        run: |
+          PLIST=$(find "$RUNNER_TEMP/Somnia.xcarchive/Products/Applications" -maxdepth 2 -name Info.plist | head -1)
+          check() { /usr/libexec/PlistBuddy -c "Print :$1" "$PLIST"; }
+          test "$(check CFBundleVersion)" = "$BUILD_NUMBER" || { echo "::error::CFBundleVersion no es $BUILD_NUMBER"; exit 1; }
+          test "$(check CFBundleShortVersionString)" = "$MARKETING_VERSION" || { echo "::error::versión incorrecta"; exit 1; }
+          test "$(check ITSAppUsesNonExemptEncryption)" = "false" || { echo "::error::falta ITSAppUsesNonExemptEncryption"; exit 1; }
+          check NSMicrophoneUsageDescription > /dev/null || { echo "::error::falta NSMicrophoneUsageDescription"; exit 1; }
+          check UIBackgroundModes | grep -q audio || { echo "::error::falta el modo de fondo audio"; exit 1; }
+          echo "Info.plist OK: $(check CFBundleShortVersionString) ($(check CFBundleVersion))"
+
       - name: Exportar el .ipa
         run: |
           xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Somnia.xcarchive" \
