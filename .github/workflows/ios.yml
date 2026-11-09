@@ -28,9 +28,11 @@ jobs:
         working-directory: ios
     env:
       BUILD_NUMBER: ${{ github.run_number }}
-      KEYCHAIN: ${{ runner.temp }}/somnia.keychain-db
     steps:
       - uses: actions/checkout@v4
+
+      - name: Rutas temporales
+        run: echo "KEYCHAIN=$RUNNER_TEMP/somnia.keychain-db" >> "$GITHUB_ENV"
 
       - name: Elegir el Xcode más reciente
         run: |
