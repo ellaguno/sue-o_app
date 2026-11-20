@@ -117,6 +117,12 @@
     <string name="relabel_title">Corregir etiqueta</string>
     <string name="cancel">Cancelar</string>
 
+    <string name="calm_title">Sonido de calma al roncar</string>
+    <string name="calm_help">Cuando se detectan varios ronquidos en cinco minutos, Somnia pone diez minutos de un sonido muy suave (ruido marrón bajo y cellos, de SesoLibre Sonidos), como mucho cuatro veces por noche. No hay evidencia de que un sonido reduzca los ronquidos: está para que compares, por la mañana, el ronquido de antes y de después. El micrófono también oye este sonido, así que el nivel de ruido se lee un poco más alto mientras suena. Usa tu volumen multimedia: déjalo bajo antes de dormir.</string>
+    <string name="calm_card_title">Sonido de calma</string>
+    <string name="calm_card_row">%1$s · ronquido en los 10 min de antes: %2$s · en los 10 min de después: %3$s</string>
+    <string name="calm_card_row_open">%1$s · ronquido en los 10 min de antes: %2$s · la noche terminó antes de los 10 min de después</string>
+    <string name="calm_card_note">Es una comparación, no una prueba: el ronquido también cambia solo. El nivel de ruido se lee un poco más alto mientras sonó.</string>
     <string name="pause_pattern_title">Patrón de pausas observado</string>
 
     <string name="battery_card_title">Optimización de batería</string>

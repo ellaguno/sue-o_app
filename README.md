@@ -18,6 +18,8 @@ Monitor nocturno **no invasivo y privado**: escucha el micrófono durante la noc
 - **2:** detector adaptativo de eventos con histéresis y pre-roll de 1 s (buffer circular), clips comprimidos **Opus/OGG** (fallback AAC en Android 8–9) solo de los eventos detectados, entidad `SoundEvent`, pantalla "Noche" con reproductor de clips, retención automática (30 días de audio, metadatos para siempre) y tope de 200 clips/noche.
 - **3:** clasificación on-device con **YAMNet** (LiteRT, 521 clases AudioSet, modelo de 4 MB en assets) mapeada a 7 categorías propias (ronquido, respiración, tos, habla, movimiento, ambiente, otro), chips de categoría con confianza y **reetiquetado manual** en la pantalla Noche, resumen de ronquidos por noche, y heurística de patrón ronquido→pausa→reanudación (con descargo explícito de que no es diagnóstico).
 
+- **Sonido de calma (experimental, apagado por defecto):** si se detectan seis ronquidos en cinco minutos, el propio servicio pone diez minutos de sonido muy suave generado por el núcleo de [SesoLibre Sonidos](https://github.com/ellaguno/sesolibre-sonidos) (`libsonidos.so`, ver `app/src/main/assets/sonidos/LEEME.md`), como mucho cuatro veces por noche. Cada reproducción se anota y la pantalla Noche compara el ronquido de los 10 min de antes y de después. No hay evidencia de que funcione: es para medirlo. Sin probar aún en un teléfono.
+
 Pendiente: prueba de una noche completa en dispositivo real; siguiente: Etapa 4 (perfil, acompañantes y bitácora).
 
 ## Compilar

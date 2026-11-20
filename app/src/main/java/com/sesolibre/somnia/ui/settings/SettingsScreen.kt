@@ -62,6 +62,7 @@ fun SettingsScreen(
 ) {
     val savedMargin by viewModel.openMarginDb.collectAsStateWithLifecycle()
     val transcribeSpeech by viewModel.transcribeSpeech.collectAsStateWithLifecycle()
+    val calmSound by viewModel.calmSound.collectAsStateWithLifecycle()
     val scheduleEnabled by viewModel.scheduleEnabled.collectAsStateWithLifecycle()
     val scheduleAutoStart by viewModel.scheduleAutoStart.collectAsStateWithLifecycle()
     val bedtimeMinutes by viewModel.bedtimeMinutes.collectAsStateWithLifecycle()
@@ -121,6 +122,7 @@ fun SettingsScreen(
                 enabled = transcribeSpeech,
                 onToggle = viewModel::setTranscribeSpeech,
             )
+            CalmSoundCard(enabled = calmSound, onToggle = viewModel::setCalmSound)
             ReportEmailCard(savedEmail = reportEmail, onSave = viewModel::setReportEmail)
             Spacer(Modifier.height(16.dp))
         }
@@ -321,6 +323,39 @@ private fun TimeRow(
             Text(
                 stringResource(R.string.schedule_time_value, minutes / 60, minutes % 60),
                 style = MaterialTheme.typography.titleMedium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CalmSoundCard(
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
+    Card {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.calm_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.weight(1f),
+                )
+                Switch(checked = enabled, onCheckedChange = onToggle)
+            }
+            Text(
+                stringResource(R.string.calm_help),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

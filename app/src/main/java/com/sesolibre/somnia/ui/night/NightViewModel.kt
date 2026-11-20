@@ -59,6 +59,7 @@ class NightViewModel @Inject constructor(
     private val repository: SessionRepository,
     profileRepository: ProfileRepository,
     private val settings: SettingsRepository,
+    calmPlaybackDao: com.sesolibre.somnia.data.db.CalmPlaybackDao,
 ) : ViewModel() {
 
     private val sessionId: Long = checkNotNull(savedStateHandle["sessionId"])
@@ -78,6 +79,15 @@ class NightViewModel @Inject constructor(
     val pausePatternCount: StateFlow<Int> = repository.events(sessionId)
         .map { ApneaHeuristic.detect(it).size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
+
+    /** Reproducciones del sonido de calma con el ronquido de antes y de después. */
+    val calmOutcomes: StateFlow<List<com.sesolibre.somnia.calm.CalmOutcome>> = combine(
+        calmPlaybackDao.bySession(sessionId),
+        repository.events(sessionId),
+        repository.observeSession(sessionId),
+    ) { playbacks, events, session ->
+        com.sesolibre.somnia.calm.CalmOutcome.of(playbacks, events, session?.endEpochMs)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     /** Resumen agregado de la noche (conteos, ronquidos, pico); null hasta cargar. */
     val summary: StateFlow<NightSummary?> = combine(

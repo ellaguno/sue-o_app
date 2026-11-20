@@ -9,8 +9,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
     entities = [
         Session::class, NoiseSample::class, SoundEvent::class,
         UserProfile::class, SleepCompanion::class, QuestionnaireResult::class, NightLog::class,
+        CalmPlayback::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class SomniaDatabase : RoomDatabase() {
@@ -21,6 +22,7 @@ abstract class SomniaDatabase : RoomDatabase() {
     abstract fun companionDao(): CompanionDao
     abstract fun questionnaireDao(): QuestionnaireDao
     abstract fun nightLogDao(): NightLogDao
+    abstract fun calmPlaybackDao(): CalmPlaybackDao
 
     companion object {
         /** v2: tabla de eventos de sonido (Etapa 2). */
@@ -120,6 +122,28 @@ abstract class SomniaDatabase : RoomDatabase() {
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `sound_events` ADD COLUMN `transcript` TEXT")
+            }
+        }
+
+        /** v6: reproducciones del sonido de calma. */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `calm_playbacks` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `sessionId` INTEGER NOT NULL,
+                        `startEpochMs` INTEGER NOT NULL,
+                        `endEpochMs` INTEGER,
+                        FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_calm_playbacks_sessionId` " +
+                        "ON `calm_playbacks` (`sessionId`)"
+                )
             }
         }
     }

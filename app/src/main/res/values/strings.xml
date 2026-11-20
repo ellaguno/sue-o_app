@@ -121,6 +121,12 @@
     <string name="relabel_title">Correct label</string>
     <string name="cancel">Cancel</string>
 
+    <string name="calm_title">Calm sound when snoring</string>
+    <string name="calm_help">When several snores are detected within five minutes, Somnia plays ten minutes of very soft sound (low brown noise and cellos, from SesoLibre Sonidos), at most four times a night. There is no evidence that sound reduces snoring: this is here so you can compare, in the morning, the snoring before and after. The microphone hears this sound too, so noise levels read a little higher while it plays. It uses your media volume: set it low before sleeping.</string>
+    <string name="calm_card_title">Calm sound</string>
+    <string name="calm_card_row">%1$s · snoring in the 10 min before: %2$s · in the 10 min after: %3$s</string>
+    <string name="calm_card_row_open">%1$s · snoring in the 10 min before: %2$s · the night ended before the 10 min after</string>
+    <string name="calm_card_note">A comparison, not proof: snoring also changes by itself. Noise levels read slightly higher while the sound played.</string>
     <string name="pause_pattern_title">Pause pattern observed</string>
 
     <string name="battery_card_title">Battery optimization</string>

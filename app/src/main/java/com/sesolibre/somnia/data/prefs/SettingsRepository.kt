@@ -44,6 +44,17 @@ class SettingsRepository @Inject constructor(
         context.settingsDataStore.edit { it[KEY_TRANSCRIBE_SPEECH] = enabled }
     }
 
+    /**
+     * Sonido de calma al detectar ronquidos (opt-in; default apagado). Se lee al INICIAR
+     * una sesión, como el umbral.
+     */
+    val calmSound: Flow<Boolean> = context.settingsDataStore.data
+        .map { it[KEY_CALM_SOUND] ?: false }
+
+    suspend fun setCalmSound(enabled: Boolean) {
+        context.settingsDataStore.edit { it[KEY_CALM_SOUND] = enabled }
+    }
+
     /** Si ya se mostró la bienvenida (colocación del teléfono, privacidad, batería). */
     val onboardingDone: Flow<Boolean> = context.settingsDataStore.data
         .map { it[KEY_ONBOARDING_DONE] ?: false }
@@ -141,6 +152,7 @@ class SettingsRepository @Inject constructor(
     companion object {
         private val KEY_OPEN_MARGIN_DB = doublePreferencesKey("open_margin_db")
         private val KEY_TRANSCRIBE_SPEECH = booleanPreferencesKey("transcribe_speech")
+        private val KEY_CALM_SOUND = booleanPreferencesKey("calm_sound")
         private val KEY_ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
         private val KEY_REPORT_EMAIL = stringPreferencesKey("report_email")
         private val KEY_SCHED_ENABLED = booleanPreferencesKey("schedule_enabled")

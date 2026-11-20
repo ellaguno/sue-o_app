@@ -88,6 +88,21 @@ interface NoiseSampleDao {
 }
 
 @Dao
+interface CalmPlaybackDao {
+    @Insert
+    suspend fun insert(playback: CalmPlayback): Long
+
+    @Query("UPDATE calm_playbacks SET endEpochMs = :endEpochMs WHERE id = :id")
+    suspend fun setEnd(id: Long, endEpochMs: Long)
+
+    @Query("DELETE FROM calm_playbacks WHERE id = :id")
+    suspend fun delete(id: Long)
+
+    @Query("SELECT * FROM calm_playbacks WHERE sessionId = :sessionId ORDER BY startEpochMs")
+    fun bySession(sessionId: Long): Flow<List<CalmPlayback>>
+}
+
+@Dao
 interface SoundEventDao {
     @Insert
     suspend fun insert(event: SoundEvent): Long

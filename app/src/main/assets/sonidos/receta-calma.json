@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "id": "sonar.calma-ronquido",
+  "sala": "prometedor",
+  "situacion": "sonar",
+  "nombre": {
+    "es": "Calma a media noche",
+    "en": "Calm in the small hours"
+  },
+  "descripcion": {
+    "es": "Pensada para que SesoLibre Somnia la ponga sola cuando detecta ronquidos: ruido marrón muy bajo con un vaivén lento y un colchón de cuerdas grave, que entra en medio minuto y se va en dos. Diez minutos. Nada que pueda despertar.",
+    "en": "Meant for SesoLibre Somnia to start by itself when it detects snoring: very low brown noise with a slow swell and a low string pad, fading in over half a minute and out over two. Ten minutes. Nothing that could wake you."
+  },
+  "ciencia": {
+    "es": "No hay evidencia de que un sonido reduzca los ronquidos; lo que existe con respaldo usa vibración para cambiar de postura. Se ofrece para que lo midas en casa: Somnia cuenta ronquidos y puede comparar noches con y sin esta receta.",
+    "en": "There is no evidence that a sound reduces snoring; what has support uses vibration to change posture. It is offered so you can measure it at home: Somnia counts snores and can compare nights with and without this recipe."
+  },
+  "fuentes": [],
+  "duracion_s": 600,
+  "fade_in_s": 30,
+  "fade_out_s": 120,
+  "semilla": 17,
+  "techo_db": -20,
+  "advertencias": [],
+  "espacio": {
+    "rt60_s": 6,
+    "amortiguacion_hz": 2000
+  },
+  "capas": [
+    {
+      "tipo": "ruido",
+      "color": "marron",
+      "oleaje_s": 14,
+      "nivel_db": -28
+    },
+    {
+      "tipo": "colchon",
+      "modo": "menor",
+      "timbre": "cello",
+      "raiz_hz": 65.4,
+      "nivel_db": -27,
+      "ciclo_s": 300,
+      "voces": 4,
+      "reverb": 0.6
+    }
+  ]
+}

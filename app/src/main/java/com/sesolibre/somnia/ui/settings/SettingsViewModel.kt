@@ -40,6 +40,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settings.setTranscribeSpeech(enabled) }
     }
 
+    val calmSound: StateFlow<Boolean> = settings.calmSound
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    fun setCalmSound(enabled: Boolean) {
+        viewModelScope.launch { settings.setCalmSound(enabled) }
+    }
+
     val reportEmail: StateFlow<String> = settings.reportEmail
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
 

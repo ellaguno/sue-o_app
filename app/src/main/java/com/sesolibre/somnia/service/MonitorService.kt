@@ -19,6 +19,10 @@ import com.sesolibre.somnia.MainActivity
 import com.sesolibre.somnia.R
 import com.sesolibre.somnia.SomniaApp
 import com.sesolibre.somnia.audio.AudioEngine
+import com.sesolibre.somnia.calm.CalmPlayer
+import com.sesolibre.somnia.calm.CalmTrigger
+import com.sesolibre.somnia.data.db.CalmPlaybackDao
+import com.sesolibre.somnia.ml.SomniaCategory
 import com.sesolibre.somnia.audio.AudioPipeline
 import com.sesolibre.somnia.audio.ClipEncoder
 import com.sesolibre.somnia.audio.DbMeter
@@ -66,6 +70,12 @@ class MonitorService : LifecycleService() {
     @Inject lateinit var repository: SessionRepository
     @Inject lateinit var stateHolder: MonitorStateHolder
     @Inject lateinit var settings: SettingsRepository
+    @Inject lateinit var calmPlaybackDao: CalmPlaybackDao
+
+    /** Sonido de calma al roncar (opt-in). El disparador es nuevo en cada sesión. */
+    private var calmEnabled = false
+    private var calmTrigger = CalmTrigger()
+    private val calmPlayer by lazy { CalmPlayer(this) }
 
     private var audioEngine: AudioEngine? = null
     private var pipeline: AudioPipeline? = null
@@ -175,6 +185,8 @@ class MonitorService : LifecycleService() {
                     startedAtMs = sessionStartMs,
                 )
             }
+            calmEnabled = settings.calmSound.first()
+            calmTrigger = CalmTrigger()
             newPipeline()
             startAudioEngine()
             startWatchdog()
@@ -298,7 +310,31 @@ class MonitorService : LifecycleService() {
                 )
             )
             stateHolder.update { it.copy(eventsDetected = it.eventsDetected + 1) }
+            if (calmEnabled && classification?.category == SomniaCategory.SNORING) {
+                maybePlayCalm(currentSessionId, baseMs + capture.endOffsetMs)
+            }
         }
+    }
+
+    /**
+     * Varios ronquidos seguidos → diez minutos de sonido suave, dentro de este mismo
+     * servicio. Se anota cuándo sonó: el micrófono también lo oye, y por la mañana se
+     * compara el ronquido de antes y de después. Corre en [eventDispatcher].
+     */
+    private suspend fun maybePlayCalm(currentSessionId: Long, snoreMs: Long) {
+        if (stopping || !calmTrigger.onSnore(snoreMs)) return
+        val startMs = System.currentTimeMillis()
+        val rowId = calmPlaybackDao.insert(
+            com.sesolibre.somnia.data.db.CalmPlayback(sessionId = currentSessionId, startEpochMs = startMs),
+        )
+        val started = calmPlayer.play { played ->
+            // Hilo de audio del reproductor: la base de datos, fuera de él.
+            CoroutineScope(Dispatchers.IO + NonCancellable).launch {
+                if (played) calmPlaybackDao.setEnd(rowId, System.currentTimeMillis())
+                else calmPlaybackDao.delete(rowId)
+            }
+        }
+        if (!started) calmPlaybackDao.delete(rowId)
     }
 
     /** Llamado desde el hilo de audio, una vez por segundo. */
@@ -340,6 +376,7 @@ class MonitorService : LifecycleService() {
         // El watchdog y el botón (o la alarma) pueden pedir parar a la vez.
         if (stopping) return
         stopping = true
+        calmPlayer.stop()
         audioEngine?.stop()
         audioEngine = null
         pipeline = null
@@ -420,6 +457,7 @@ class MonitorService : LifecycleService() {
             .takeIf { it in 0..100 }
 
     override fun onDestroy() {
+        calmPlayer.stop()
         audioEngine?.stop()
         wakeLock?.let { if (it.isHeld) it.release() }
         eventScope.cancel()

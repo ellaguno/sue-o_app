@@ -2,6 +2,7 @@ package com.sesolibre.somnia.di
 
 import android.content.Context
 import androidx.room.Room
+import com.sesolibre.somnia.data.db.CalmPlaybackDao
 import com.sesolibre.somnia.data.db.CompanionDao
 import com.sesolibre.somnia.data.db.NightLogDao
 import com.sesolibre.somnia.data.db.NoiseSampleDao
@@ -30,6 +31,7 @@ object AppModule {
                 SomniaDatabase.MIGRATION_2_3,
                 SomniaDatabase.MIGRATION_3_4,
                 SomniaDatabase.MIGRATION_4_5,
+                SomniaDatabase.MIGRATION_5_6,
             )
             .build()
 
@@ -50,6 +52,9 @@ object AppModule {
 
     @Provides
     fun provideQuestionnaireDao(db: SomniaDatabase): QuestionnaireDao = db.questionnaireDao()
+
+    @Provides
+    fun provideCalmPlaybackDao(db: SomniaDatabase): CalmPlaybackDao = db.calmPlaybackDao()
 
     @Provides
     fun provideNightLogDao(db: SomniaDatabase): NightLogDao = db.nightLogDao()

@@ -42,6 +42,30 @@ data class NoiseSample(
 )
 
 /**
+ * Una vez que sonó el "sonido de calma" (ver `calm/`). Sirve para marcar esos minutos —el
+ * micrófono también lo oye— y para comparar el ronquido de antes y de después.
+ */
+@Entity(
+    tableName = "calm_playbacks",
+    foreignKeys = [
+        ForeignKey(
+            entity = Session::class,
+            parentColumns = ["id"],
+            childColumns = ["sessionId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("sessionId")],
+)
+data class CalmPlayback(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val sessionId: Long,
+    val startEpochMs: Long,
+    /** null mientras suena, o si el proceso murió a la mitad. */
+    val endEpochMs: Long? = null,
+)
+
+/**
  * Un evento de sonido detectado (ronquido, tos, ruido…). El audio del clip
  * vive como archivo en almacenamiento interno ([clipPath]); la fila conserva
  * los metadatos aunque el clip se borre por retención.

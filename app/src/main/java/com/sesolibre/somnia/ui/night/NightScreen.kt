@@ -105,6 +105,7 @@ fun NightScreen(
     val events by viewModel.events.collectAsStateWithLifecycle()
     val playingId by viewModel.playingEventId.collectAsStateWithLifecycle()
     val pausePatterns by viewModel.pausePatternCount.collectAsStateWithLifecycle()
+    val calmOutcomes by viewModel.calmOutcomes.collectAsStateWithLifecycle()
     val summary by viewModel.summary.collectAsStateWithLifecycle()
     val companions by viewModel.companions.collectAsStateWithLifecycle()
     val sleepsAlone by viewModel.sleepsAlone.collectAsStateWithLifecycle()
@@ -458,6 +459,38 @@ fun NightScreen(
                                     if (nightLog == null) R.string.night_log_add
                                     else R.string.night_log_edit
                                 )
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (calmOutcomes.isNotEmpty()) {
+                item {
+                    Card {
+                        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                stringResource(R.string.calm_card_title),
+                                style = MaterialTheme.typography.titleSmall,
+                            )
+                            val timeFormat = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
+                            fun span(ms: Long) = "%d:%02d".format(ms / 60_000, ms / 1000 % 60)
+                            calmOutcomes.forEach { outcome ->
+                                val time = timeFormat.format(java.util.Date(outcome.startEpochMs))
+                                val after = outcome.snoringAfterMs
+                                Text(
+                                    if (after != null) {
+                                        stringResource(R.string.calm_card_row, time, span(outcome.snoringBeforeMs), span(after))
+                                    } else {
+                                        stringResource(R.string.calm_card_row_open, time, span(outcome.snoringBeforeMs))
+                                    },
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
+                            Text(
+                                stringResource(R.string.calm_card_note),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
