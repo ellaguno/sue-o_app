@@ -63,6 +63,7 @@ fun SettingsScreen(
     val savedMargin by viewModel.openMarginDb.collectAsStateWithLifecycle()
     val transcribeSpeech by viewModel.transcribeSpeech.collectAsStateWithLifecycle()
     val calmSound by viewModel.calmSound.collectAsStateWithLifecycle()
+    val calmTest by viewModel.calmTest.collectAsStateWithLifecycle()
     val scheduleEnabled by viewModel.scheduleEnabled.collectAsStateWithLifecycle()
     val scheduleAutoStart by viewModel.scheduleAutoStart.collectAsStateWithLifecycle()
     val bedtimeMinutes by viewModel.bedtimeMinutes.collectAsStateWithLifecycle()
@@ -122,7 +123,12 @@ fun SettingsScreen(
                 enabled = transcribeSpeech,
                 onToggle = viewModel::setTranscribeSpeech,
             )
-            CalmSoundCard(enabled = calmSound, onToggle = viewModel::setCalmSound)
+            CalmSoundCard(
+                enabled = calmSound,
+                onToggle = viewModel::setCalmSound,
+                test = calmTest,
+                onToggleTest = viewModel::toggleCalmTest,
+            )
             ReportEmailCard(savedEmail = reportEmail, onSave = viewModel::setReportEmail)
             Spacer(Modifier.height(16.dp))
         }
@@ -332,6 +338,8 @@ private fun TimeRow(
 private fun CalmSoundCard(
     enabled: Boolean,
     onToggle: (Boolean) -> Unit,
+    test: SettingsViewModel.CalmTest,
+    onToggleTest: () -> Unit,
 ) {
     Card {
         Column(
@@ -357,6 +365,23 @@ private fun CalmSoundCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            val playing = test == SettingsViewModel.CalmTest.PLAYING
+            TextButton(onClick = onToggleTest) {
+                Text(stringResource(if (playing) R.string.calm_test_stop else R.string.calm_test_play))
+            }
+            val note = when (test) {
+                SettingsViewModel.CalmTest.PLAYING -> R.string.calm_test_playing
+                SettingsViewModel.CalmTest.BUSY -> R.string.calm_test_busy
+                SettingsViewModel.CalmTest.FAILED -> R.string.calm_test_failed
+                SettingsViewModel.CalmTest.IDLE -> null
+            }
+            if (note != null) {
+                Text(
+                    stringResource(note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

@@ -27,13 +27,14 @@ class CalmPlayer(private val context: Context) {
     /**
      * Empieza a sonar si no suena ya nada. [onEnd] se llama desde el hilo de audio al
      * terminar (true = sonó hasta el final o hasta [stop]; false = no pudo sonar).
-     * Devuelve false si no empezó.
+     * Devuelve false si no empezó. [durationS] > 0 acorta la receta (la prueba de Ajustes);
+     * 0 = los diez minutos completos.
      */
-    fun play(onEnd: (played: Boolean) -> Unit): Boolean {
+    fun play(durationS: Float = 0f, onEnd: (played: Boolean) -> Unit): Boolean {
         if (isPlaying) return false
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         if (audioManager.isMusicActive) return false
-        thread = Worker(onEnd).also { it.start() }
+        thread = Worker(durationS, onEnd).also { it.start() }
         return true
     }
 
@@ -42,7 +43,7 @@ class CalmPlayer(private val context: Context) {
         thread?.requestStop()
     }
 
-    private inner class Worker(private val onEnd: (Boolean) -> Unit) : Thread("somnia-calm") {
+    private inner class Worker(private val durationS: Float, private val onEnd: (Boolean) -> Unit) : Thread("somnia-calm") {
         private val lock = Any()
         private var session = 0L
         @Volatile private var alive = true
@@ -64,7 +65,7 @@ class CalmPlayer(private val context: Context) {
                         if (file.isEmpty()) continue
                         Nativo.bancoAgregar(bank, file, context.assets.open("$AUDIO_ROOT/$file").use { it.readBytes() })
                     }
-                    Nativo.crear(recipe, 0f, -1L, bank)
+                    Nativo.crear(recipe, durationS, -1L, bank)
                 } finally {
                     Nativo.bancoLiberar(bank)
                 }

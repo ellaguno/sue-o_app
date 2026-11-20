@@ -1,10 +1,13 @@
 package com.sesolibre.somnia.ui.settings
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.sesolibre.somnia.calm.CalmPlayer
 import com.sesolibre.somnia.data.prefs.SettingsRepository
 import com.sesolibre.somnia.schedule.SleepScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,7 +21,33 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val settings: SettingsRepository,
     private val sleepScheduler: SleepScheduler,
+    @ApplicationContext appContext: Context,
 ) : ViewModel() {
+
+    // --- Probar el sonido de calma (un minuto, para ajustar el volumen despierto) ---
+
+    private val calmPlayer = CalmPlayer(appContext)
+    private val _calmTest = MutableStateFlow(CalmTest.IDLE)
+    val calmTest: StateFlow<CalmTest> = _calmTest.asStateFlow()
+
+    enum class CalmTest { IDLE, PLAYING, BUSY, FAILED }
+
+    fun toggleCalmTest() {
+        if (calmPlayer.isPlaying) {
+            calmPlayer.stop()
+            return
+        }
+        val started = calmPlayer.play(durationS = CALM_TEST_SECONDS) { played ->
+            _calmTest.value = if (played) CalmTest.IDLE else CalmTest.FAILED
+        }
+        // No empieza si ya suena otra cosa en el teléfono.
+        _calmTest.value = if (started) CalmTest.PLAYING else CalmTest.BUSY
+    }
+
+    override fun onCleared() {
+        calmPlayer.stop()
+    }
+
 
     val openMarginDb: StateFlow<Double> = settings.openMarginDb
         .stateIn(
@@ -118,5 +147,10 @@ class SettingsViewModel @Inject constructor(
             persist()
             sleepScheduler.sync()
         }
+    }
+
+    private companion object {
+        /** La receta acortada: entra en 20 s, suena y se va sola. */
+        const val CALM_TEST_SECONDS = 60f
     }
 }
