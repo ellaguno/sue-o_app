@@ -45,8 +45,11 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      # El runner de Ubuntu ya trae el SDK de Android (ANDROID_HOME); la acción
+      # setup-android falla al aceptar la licencia de un SDK preliminar (igual que
+      # en sesolibre-mind).
+      - name: SDK de Android del runner
+        run: echo "ANDROID_HOME=$ANDROID_HOME" && ls "$ANDROID_HOME/platforms" | tail -n 3
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
