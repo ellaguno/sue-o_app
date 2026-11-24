@@ -1,23 +1,43 @@
-name: Release AAB
+name: Android (Google Play)
 
-# Se dispara al publicar un tag de versión, p. ej.:
-#   git tag v0.1.0 && git push origin v0.1.0
-# También se puede lanzar a mano desde la pestaña Actions (workflow_dispatch).
+# Compila el AAB de release (R8), lo firma con la upload key y lo sube a una
+# pista de prueba de Google Play. Mismo esquema que sesolibre-mind.
+#
+# Se dispara al publicar un tag de versión (git tag v0.2.5 && git push origin v0.2.5)
+# o a mano (Actions → Android (Google Play) → Run workflow), con o sin subir.
+#
+# Secrets del repositorio:
+#   KEYSTORE_BASE64, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD   upload key
+#   PLAY_SERVICE_ACCOUNT_JSON   cuenta de servicio con permiso de publicar
+# Variable opcional del repositorio: PLAY_TRACK (pista de destino; por omisión «internal»).
+#
+# versionCode = nº de commits (lo calcula app/build.gradle.kts, igual que en local);
+# versionName = appVersionName de app/build.gradle.kts. Notas: docs/release-notes.txt.
 on:
   push:
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      upload:
+        description: "Subir a Google Play"
+        type: boolean
+        default: true
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
 
 jobs:
   bundle:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
     env:
-      # Si el secret no está configurado, queda vacío y el paso de publicar
-      # a Play se salta (el workflow sigue generando el AAB igualmente).
-      PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+      PLAY_TRACK: ${{ vars.PLAY_TRACK || 'internal' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # el versionCode es el nº de commits
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -31,13 +51,13 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # versionCode único y creciente: derivado del número de corrida del workflow.
-      - name: Compute versionCode
-        run: echo "VERSION_CODE=${{ github.run_number }}" >> "$GITHUB_ENV"
+      # Nada se publica si fallan las pruebas o el lint.
+      - name: Pruebas y lint
+        run: ./gradlew testDebugUnitTest lintDebug
 
       # Reconstruye el keystore y sus credenciales desde los Secrets del repo.
       # NUNCA se guardan en git; solo viven en el runner efímero de esta corrida.
-      - name: Restore keystore
+      - name: Restaurar el keystore
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -45,7 +65,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::error::Falta el secret KEYSTORE_BASE64 (y compañía). Configúralos en Settings → Secrets and variables → Actions."
+            echo "::error::Falta el secret KEYSTORE_BASE64 (y compañía)."
             exit 1
           fi
           mkdir -p keystore
@@ -57,32 +77,36 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > keystore.properties
 
-      - name: Unit tests
-        run: ./gradlew testDebugUnitTest
+      - name: Compilar y firmar el AAB
+        run: |
+          ./gradlew :app:bundleRelease
+          AAB=app/build/outputs/bundle/release/app-release.aab
+          jarsigner -verify "$AAB" | tail -n 1
+          echo "versionCode: $(git rev-list --count HEAD)"
 
-      - name: Build signed release bundle (AAB)
-        run: ./gradlew :app:bundleRelease
+      - name: Pistas de Google Play (comprueba el acceso de la cuenta de servicio)
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: node scripts/android/play.mjs tracks
 
-      - name: Clean up signing material
-        if: always()
-        run: rm -f keystore.properties keystore/upload-keystore.jks
+      - name: Subir a Google Play
+        if: github.event_name == 'push' || inputs.upload
+        env:
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          node scripts/android/play.mjs upload app/build/outputs/bundle/release/app-release.aab "$PLAY_TRACK" \
+            app/build/outputs/mapping/release/mapping.txt docs/release-notes.txt
 
-      - name: Upload AAB
+      - name: Guardar el AAB como artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: somnia-release-aab-${{ github.ref_name }}
-          path: app/build/outputs/bundle/release/app-release.aab
+          name: somnia-aab-${{ github.ref_name }}
+          path: |
+            app/build/outputs/bundle/release/app-release.aab
+            app/build/outputs/mapping/release/mapping.txt
           if-no-files-found: error
+          retention-days: 14
 
-      # Publica el AAB en Play (pista interna, como borrador para revisar).
-      # Se salta solo si aún no existe el secret PLAY_SERVICE_ACCOUNT_JSON.
-      - name: Publicar en Play (pista interna)
-        if: ${{ env.PLAY_JSON != '' }}
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJsonPlainText: ${{ env.PLAY_JSON }}
-          packageName: com.sesolibre.somnia
-          releaseFiles: app/build/outputs/bundle/release/app-release.aab
-          mappingFile: app/build/outputs/mapping/release/mapping.txt
-          track: internal
-          status: draft
+      - name: Borrar el material de firma
+        if: always()
+        run: rm -f keystore.properties keystore/upload-keystore.jks

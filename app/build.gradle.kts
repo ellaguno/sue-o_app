@@ -13,10 +13,16 @@ val keystoreProps = Properties().apply {
     if (f.exists()) f.inputStream().use { load(it) }
 }
 
-// versionCode: en CI lo fija el workflow (env VERSION_CODE, derivado de
-// github.run_number) para que cada AAB subido a Play sea único y creciente.
-// En builds locales cae al valor por defecto.
-val ciVersionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1
+// versionCode = número de commits de la rama (igual que en sesolibre-mind):
+// siempre crece y sale igual en local y en CI (CI clona con fetch-depth: 0).
+// VERSION_CODE en el entorno lo sobreescribe si hiciera falta.
+// Historial: hasta la 0.2.5 se usó run_number y luego valores a mano (5, 6, 7);
+// el conteo de commits ya va arriba de eso.
+val gitCommitCount: Int? = runCatching {
+    providers.exec { commandLine("git", "rev-list", "--count", "HEAD") }
+        .standardOutput.asText.get().trim().toInt()
+}.getOrNull()
+val ciVersionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: gitCommitCount ?: 1
 // versionName: manual y semántico (se sube a mano antes de etiquetar un release).
 val appVersionName = "0.2.5"
 
