@@ -11,6 +11,8 @@ import com.sesolibre.somnia.data.db.SessionDao
 import com.sesolibre.somnia.data.db.SessionWithStats
 import com.sesolibre.somnia.data.db.SoundEvent
 import com.sesolibre.somnia.data.db.SoundEventDao
+import com.sesolibre.somnia.data.db.SoundPlay
+import com.sesolibre.somnia.data.db.SoundPlayDao
 import com.sesolibre.somnia.stats.NightMetrics
 import com.sesolibre.somnia.stats.TrendsAnalyzer
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +32,7 @@ class SessionRepository @Inject constructor(
     private val noiseSampleDao: NoiseSampleDao,
     private val soundEventDao: SoundEventDao,
     private val nightLogDao: NightLogDao,
+    private val soundPlayDao: SoundPlayDao,
 ) {
 
     /**
@@ -43,10 +46,25 @@ class SessionRepository @Inject constructor(
     @Volatile
     private var activeSessionId: Long? = null
 
-    suspend fun startSession(nowMs: Long, batteryPct: Int?): Long = sessionLock.withLock {
-        sessionDao.insert(Session(startEpochMs = nowMs, batteryStartPct = batteryPct))
-            .also { activeSessionId = it }
+    suspend fun startSession(
+        nowMs: Long,
+        batteryPct: Int?,
+        snoreSoundEnabled: Boolean = false,
+    ): Long = sessionLock.withLock {
+        sessionDao.insert(
+            Session(startEpochMs = nowMs, batteryStartPct = batteryPct, snoreSoundEnabled = snoreSoundEnabled)
+        ).also { activeSessionId = it }
     }
+
+    // --- Sonido suave al roncar (SesoLibre Sonidos) ---
+
+    suspend fun startSoundPlay(sessionId: Long, nowMs: Long, recipeId: String): Long =
+        soundPlayDao.insert(SoundPlay(sessionId = sessionId, startEpochMs = nowMs, recipeId = recipeId))
+
+    suspend fun endSoundPlay(playId: Long, endMs: Long, reason: String) =
+        soundPlayDao.close(playId, endMs, reason)
+
+    fun soundPlays(sessionId: Long): Flow<List<SoundPlay>> = soundPlayDao.bySession(sessionId)
 
     /**
      * Retoma la última noche si el sistema mató el proceso a media grabación y
@@ -100,6 +118,7 @@ class SessionRepository @Inject constructor(
             }
             sessionDao.update(session.copy(endEpochMs = endMs))
         }
+        soundPlayDao.closeDangling(exceptSessionId = active ?: -1L)
         abandoned.size
     }
 
@@ -130,9 +149,11 @@ class SessionRepository @Inject constructor(
         soundEventDao.observeAll(),
         noiseSampleDao.peakBySession(),
         nightLogDao.observeAll(),
-    ) { sessions, events, peaks, logs ->
+        soundPlayDao.observeAll(),
+    ) { sessions, events, peaks, logs, plays ->
         TrendsAnalyzer.metricsWithPeaks(
             sessions, events, peaks.associate { it.sessionId to it.dbMax }, logs,
+            playsBySession = plays.groupingBy { it.sessionId }.eachCount(),
         )
     }
         // Mientras se graba llega un minuto nuevo cada 60 s: se calcula fuera

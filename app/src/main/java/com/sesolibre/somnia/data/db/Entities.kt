@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -17,7 +18,45 @@ data class Session(
     val batteryStartPct: Int? = null,
     val batteryEndPct: Int? = null,
     val notes: String? = null,
+    /**
+     * Si el experimento "sonido suave al roncar" estaba activado esa noche
+     * (aunque no haya llegado a sonar): permite comparar noches con y sin él.
+     */
+    @ColumnInfo(defaultValue = "0")
+    val snoreSoundEnabled: Boolean = false,
 )
+
+/**
+ * Una vez que sonó el sonido suave de SesoLibre Sonidos durante la noche.
+ * Mientras suena no se detectan eventos (el micrófono lo oiría).
+ */
+@Entity(
+    tableName = "sound_plays",
+    foreignKeys = [
+        ForeignKey(
+            entity = Session::class,
+            parentColumns = ["id"],
+            childColumns = ["sessionId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("sessionId")],
+)
+data class SoundPlay(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val sessionId: Long,
+    val startEpochMs: Long,
+    /** null mientras suena (o si el proceso murió antes de cerrarla). */
+    val endEpochMs: Long? = null,
+    /** Receta de SesoLibre Sonidos, p. ej. "sonar.calma-ronquido". */
+    val recipeId: String,
+    /** "finished" (terminó la receta), "stopped" (se cortó) o "failed". */
+    val endReason: String? = null,
+) {
+    /** Tramo en que sonó (si no se cerró, lo que dura la receta: 10 min). */
+    val range: LongRange
+        get() = startEpochMs..(endEpochMs ?: (startEpochMs + 10 * 60_000L))
+}
 
 /** Serie de ruido: estadísticas de dBFS por minuto (sin audio). */
 @Entity(

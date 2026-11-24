@@ -1,5 +1,7 @@
 package com.sesolibre.somnia.ui.welcome
 
+import androidx.compose.ui.Alignment
+import com.sesolibre.somnia.ui.components.SomniaLogo
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -45,13 +47,10 @@ fun WelcomeScreen(onDone: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Spacer(Modifier.height(8.dp))
-            Image(
-                painter = painterResource(R.drawable.somnia_header),
+            SomniaLogo(
                 contentDescription = stringResource(R.string.app_name),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(72.dp),
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                height = 64.dp,
             )
             Text(
                 stringResource(R.string.welcome_title),

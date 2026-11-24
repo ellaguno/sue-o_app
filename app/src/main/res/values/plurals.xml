@@ -29,4 +29,12 @@
         <item quantity="one">%d recording</item>
         <item quantity="other">%d recordings</item>
     </plurals>
+    <plurals name="night_sound_count">
+        <item quantity="one">Played %d time</item>
+        <item quantity="other">Played %d times</item>
+    </plurals>
+    <plurals name="trends_sound_nights">
+        <item quantity="one">%1$d night with the sound on · it played %2$d times</item>
+        <item quantity="other">%1$d nights with the sound on · it played %2$d times</item>
+    </plurals>
 </resources>

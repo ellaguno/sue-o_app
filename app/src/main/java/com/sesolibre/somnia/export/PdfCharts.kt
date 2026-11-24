@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.export
 
+import com.sesolibre.somnia.data.db.SoundPlay
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
@@ -33,6 +34,7 @@ internal object PdfCharts {
     }
     private val band = Paint().apply { color = 0x333B4C9B; style = Paint.Style.FILL; isAntiAlias = true }
     private val fill = Paint().apply { style = Paint.Style.FILL; isAntiAlias = true }
+    private val soundBand = Paint().apply { color = 0x337B6CF6; style = Paint.Style.FILL }
 
     fun argb(category: SomniaCategory?): Int = categoryColor(category).toArgb()
 
@@ -50,6 +52,7 @@ internal object PdfCharts {
         endEpochMs: Long,
         calibrationOffset: Double,
         zone: ZoneId,
+        soundPlays: List<SoundPlay> = emptyList(),
         hourLabel: (Long) -> String,
     ) {
         val span = (endEpochMs - startEpochMs).coerceAtLeast(60_000L).toFloat()
@@ -86,6 +89,12 @@ internal object PdfCharts {
                 canvas.drawText(label, x - axisText.measureText(label) / 2, rect.bottom, axisText)
             }
             h += hourMs; i++
+        }
+
+        // Minutos en que sonó el sonido suave (sin detección de eventos).
+        soundPlays.forEach { play ->
+            val end = play.endEpochMs ?: (play.startEpochMs + 10 * 60_000L)
+            canvas.drawRect(xAt(play.startEpochMs), rect.top, maxOf(xAt(end), xAt(play.startEpochMs) + 1.5f), plot.bottom, soundBand)
         }
 
         // Banda mín–máx y curva del promedio.

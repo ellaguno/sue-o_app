@@ -1,5 +1,8 @@
 package com.sesolibre.somnia.ui.night
 
+import androidx.compose.runtime.mutableLongStateOf
+import com.sesolibre.somnia.data.db.NoiseSample
+import com.sesolibre.somnia.data.db.SoundPlay
 import com.sesolibre.somnia.util.LocalDates
 import androidx.compose.material.icons.filled.Email
 import com.sesolibre.somnia.export.ReportMailer
@@ -115,6 +118,7 @@ fun NightScreen(
     val highlights by viewModel.highlights.collectAsStateWithLifecycle()
     val recommendations by viewModel.recommendations.collectAsStateWithLifecycle()
     val shareRequest by viewModel.shareRequest.collectAsStateWithLifecycle()
+    val soundPlays by viewModel.soundPlays.collectAsStateWithLifecycle()
     val playbackFailed by viewModel.playbackFailed.collectAsStateWithLifecycle()
     val emailPreparing by viewModel.emailPreparing.collectAsStateWithLifecycle()
     val emailDraft by viewModel.emailDraft.collectAsStateWithLifecycle()
@@ -178,6 +182,9 @@ fun NightScreen(
     var editingLog by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
     var confirmingDelete by remember { mutableStateOf(false) }
+    // Momento tocado en la gráfica (y cuánto margen hay para "el evento más cercano").
+    var selectedMs by remember { mutableStateOf<Long?>(null) }
+    var selectionToleranceMs by remember { mutableLongStateOf(0L) }
     // Diálogo de correo: de toda la noche (emailEvent = null) o de un solo clip.
     var emailing by remember { mutableStateOf(false) }
     var emailEvent by remember { mutableStateOf<SoundEvent?>(null) }
@@ -383,6 +390,23 @@ fun NightScreen(
                             startEpochMs = s.startEpochMs,
                             endEpochMs = s.endEpochMs,
                             calibrationOffset = s.calibrationDbOffset,
+                            soundPlays = soundPlays,
+                            selectedMs = selectedMs,
+                            onSelect = { t, tolerance ->
+                                selectedMs = t
+                                selectionToleranceMs = tolerance
+                            },
+                        )
+                        TimelineSelection(
+                            soundPlays = soundPlays,
+                            selectedMs = selectedMs,
+                            toleranceMs = selectionToleranceMs,
+                            samples = samples,
+                            events = events,
+                            startEpochMs = s.startEpochMs,
+                            calibrationOffset = s.calibrationDbOffset,
+                            playingId = playingId,
+                            onTogglePlay = { viewModel.togglePlay(it) },
                         )
                     }
                 }
@@ -413,6 +437,15 @@ fun NightScreen(
 
             if (recommendations.isNotEmpty()) {
                 item { RecommendationsCard(recommendations) }
+            }
+
+            if (s.snoreSoundEnabled || soundPlays.isNotEmpty()) {
+                item {
+                    SoundPlaysCard(
+                        plays = soundPlays,
+                        timeFor = { LocalDates.time(context).format(Instant.ofEpochMilli(it)) },
+                    )
+                }
             }
 
             if (!sleepsAlone) {
@@ -639,6 +672,142 @@ private fun CategoryBreakdown(
 }
 
 @OptIn(ExperimentalLayoutApi::class)
+/**
+ * Lo que pasó en el momento tocado de la gráfica: hora, nivel de ruido de ese
+ * minuto y el evento más cercano (si hay), con botón para escucharlo.
+ */
+@Composable
+private fun TimelineSelection(
+    soundPlays: List<SoundPlay>,
+    selectedMs: Long?,
+    toleranceMs: Long,
+    samples: List<NoiseSample>,
+    events: List<SoundEvent>,
+    startEpochMs: Long,
+    calibrationOffset: Double,
+    playingId: Long?,
+    onTogglePlay: (SoundEvent) -> Unit,
+) {
+    val context = LocalContext.current
+    if (selectedMs == null) {
+        Text(
+            stringResource(R.string.timeline_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        return
+    }
+    val timeFmt = remember(context) { LocalDates.time(context) }
+    val secFmt = remember(context) { LocalDates.time(context, seconds = true) }
+    val minute = ((selectedMs - startEpochMs) / 60_000L).toInt()
+    val db = samples.minByOrNull { kotlin.math.abs(it.minuteIndex - minute) }
+        ?.let { (it.dbAvg + calibrationOffset).roundToInt() }
+    // El evento más cercano dentro del margen del dedo (o que abarque ese momento).
+    val nearest = events
+        .filter { selectedMs in (it.startEpochMs - toleranceMs)..(it.endEpochMs + toleranceMs) }
+        .minByOrNull { kotlin.math.abs(it.startEpochMs - selectedMs) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(
+            if (db != null) {
+                stringResource(R.string.timeline_point, timeFmt.format(Instant.ofEpochMilli(selectedMs)), db)
+            } else {
+                timeFmt.format(Instant.ofEpochMilli(selectedMs))
+            },
+            style = MaterialTheme.typography.titleSmall,
+        )
+        // Dentro de una franja morada: el nivel alto es el sonido de Somnia, no la habitación.
+        soundPlays.firstOrNull { p ->
+            selectedMs in p.startEpochMs..(p.endEpochMs ?: (p.startEpochMs + 10 * 60_000L))
+        }?.let { play ->
+            val end = play.endEpochMs ?: (play.startEpochMs + 10 * 60_000L)
+            Text(
+                stringResource(
+                    R.string.timeline_sound_playing,
+                    timeFmt.format(Instant.ofEpochMilli(play.startEpochMs)),
+                    timeFmt.format(Instant.ofEpochMilli(end)),
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.secondary,
+            )
+        }
+        if (nearest == null) {
+            Text(
+                stringResource(R.string.timeline_no_event),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            val category = ApneaHeuristic.effectiveCategory(nearest)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(10.dp)
+                        .background(categoryColor(SomniaCategory.fromKey(category)), CircleShape),
+                )
+                Text(
+                    stringResource(
+                        R.string.timeline_event,
+                        categoryLabel(category),
+                        secFmt.format(Instant.ofEpochMilli(nearest.startEpochMs)),
+                        (nearest.dbPeak + calibrationOffset).roundToInt(),
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            if (nearest.clipPath != null) {
+                TextButton(onClick = { onTogglePlay(nearest) }) {
+                    Text(
+                        stringResource(
+                            if (playingId == nearest.id) R.string.event_stop else R.string.event_play,
+                        ),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Veces que sonó el sonido suave de SesoLibre Sonidos (experimento opcional). */
+@Composable
+private fun SoundPlaysCard(plays: List<SoundPlay>, timeFor: (Long) -> String) {
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(stringResource(R.string.night_sound_title), style = MaterialTheme.typography.titleSmall)
+            if (plays.isEmpty()) {
+                Text(
+                    stringResource(R.string.night_sound_enabled_none),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                return@Column
+            }
+            Text(
+                pluralStringResource(R.plurals.night_sound_count, plays.size, plays.size),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            plays.forEach { play ->
+                val end = play.endEpochMs ?: (play.startEpochMs + 10 * 60_000L)
+                val note = when (play.endReason) {
+                    "stopped" -> " · " + stringResource(R.string.night_sound_cut)
+                    "failed" -> " · " + stringResource(R.string.night_sound_failed)
+                    else -> ""
+                }
+                Text(
+                    stringResource(R.string.night_sound_line, timeFor(play.startEpochMs), timeFor(end)) + note,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            Text(
+                stringResource(R.string.night_sound_legend),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
 @Composable
 private fun EventRow(
     event: SoundEvent,

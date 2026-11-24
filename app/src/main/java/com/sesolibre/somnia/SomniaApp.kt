@@ -1,5 +1,6 @@
 package com.sesolibre.somnia
 
+import com.sesolibre.somnia.schedule.BedtimeReminder
 import android.app.Application
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -58,6 +59,7 @@ class SomniaApp : Application() {
             setShowBadge(false)
         }
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        BedtimeReminder.createChannel(this)
     }
 
     companion object {

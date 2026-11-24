@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.ui.trends
 
+import com.sesolibre.somnia.stats.SoundExperiment
 import com.sesolibre.somnia.util.LocalDates
 import com.sesolibre.somnia.R
 import com.sesolibre.somnia.data.prefs.SettingsRepository
@@ -42,6 +43,11 @@ class TrendsViewModel @Inject constructor(
     val overview: StateFlow<TrendsOverview> = metrics
         .map { TrendsAnalyzer.overview(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), TrendsOverview(0, 0.0, 0.0, 0.0, 0))
+
+    /** Experimento "sonido al roncar": null si nunca se activó. */
+    val soundExperiment: StateFlow<SoundExperiment?> = metrics
+        .map { TrendsAnalyzer.soundExperiment(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     val correlations: StateFlow<List<TagEffect>> = metrics
         .map { TrendsAnalyzer.correlations(it) }

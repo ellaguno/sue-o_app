@@ -9,8 +9,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
     entities = [
         Session::class, NoiseSample::class, SoundEvent::class,
         UserProfile::class, SleepCompanion::class, QuestionnaireResult::class, NightLog::class,
+        SoundPlay::class,
     ],
-    version = 5,
+    version = 6,
     exportSchema = false,
 )
 abstract class SomniaDatabase : RoomDatabase() {
@@ -21,6 +22,7 @@ abstract class SomniaDatabase : RoomDatabase() {
     abstract fun companionDao(): CompanionDao
     abstract fun questionnaireDao(): QuestionnaireDao
     abstract fun nightLogDao(): NightLogDao
+    abstract fun soundPlayDao(): SoundPlayDao
 
     companion object {
         /** v2: tabla de eventos de sonido (Etapa 2). */
@@ -113,6 +115,32 @@ abstract class SomniaDatabase : RoomDatabase() {
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE `sound_events` ADD COLUMN `rawLabel` TEXT")
+            }
+        }
+
+        /** v6: experimento "sonido suave al roncar" (SesoLibre Sonidos). */
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `sessions` ADD COLUMN `snoreSoundEnabled` INTEGER NOT NULL DEFAULT 0"
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `sound_plays` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `sessionId` INTEGER NOT NULL,
+                        `startEpochMs` INTEGER NOT NULL,
+                        `endEpochMs` INTEGER,
+                        `recipeId` TEXT NOT NULL,
+                        `endReason` TEXT,
+                        FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_sound_plays_sessionId` ON `sound_plays` (`sessionId`)"
+                )
             }
         }
 

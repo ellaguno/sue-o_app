@@ -107,6 +107,11 @@ object NightAnalyzer {
         session: Session,
         events: List<SoundEvent>,
         samples: List<NoiseSample>,
+        /**
+         * Tramos (epoch ms) a ignorar para el pico de ruido: cuando sonaba el
+         * sonido suave de Somnia, el micrófono lo oye y no es ruido del cuarto.
+         */
+        excludeRanges: List<LongRange> = emptyList(),
     ): NightSummary {
         val durationMinutes = session.endEpochMs?.let { (it - session.startEpochMs) / 60_000 }
 
@@ -122,7 +127,12 @@ object NightAnalyzer {
         }
         val snoringMinutes = snores.sumOf { it.durationMs } / 60_000.0
 
-        val peakDb = samples.maxOfOrNull { it.dbMax }
+        val peakDb = samples
+            .filter { s ->
+                val minuteStart = session.startEpochMs + s.minuteIndex * 60_000L
+                excludeRanges.none { r -> minuteStart + 59_999L >= r.first && minuteStart <= r.last }
+            }
+            .maxOfOrNull { it.dbMax }
             ?.let { (it + session.calibrationDbOffset).roundToInt() }
 
         return NightSummary(

@@ -27,7 +27,29 @@ data class NightMetrics(
     val speechCount: Int,
     /** Todo lo que no es ronquido/tos/habla (respiración, movimiento, ambiente, otros, sin clasificar). */
     val otherCount: Int,
+    /** El experimento "sonido suave al roncar" estaba activado esa noche. */
+    val snoreSoundEnabled: Boolean = false,
+    /** Cuántas veces sonó esa noche. */
+    val soundPlays: Int = 0,
 )
+
+/**
+ * Comparación del experimento "sonido suave al roncar": minutos roncando en
+ * promedio en las noches con el experimento activado frente a las noches sin
+ * él. Se agrupa por si estaba ACTIVADO (no por si llegó a sonar), para no
+ * comparar solo las noches en que ya se roncó mucho. Es descriptivo, no prueba nada.
+ */
+data class SoundExperiment(
+    val nightsOn: Int,
+    val nightsOff: Int,
+    val avgSnoringOn: Double,
+    val avgSnoringOff: Double,
+    val totalPlays: Int,
+) {
+    val deltaMinutes: Double get() = avgSnoringOn - avgSnoringOff
+    /** Hace falta al menos una noche de cada lado para comparar. */
+    val comparable: Boolean get() = nightsOn > 0 && nightsOff > 0
+}
 
 /** Promedios sobre el conjunto de noches (encabezado de Tendencias). */
 data class TrendsOverview(
@@ -86,6 +108,7 @@ object TrendsAnalyzer {
         events: List<SoundEvent>,
         peakDbfsBySession: Map<Long, Double>,
         logs: List<NightLog>,
+        playsBySession: Map<Long, Int> = emptyMap(),
     ): List<NightMetrics> {
         val eventsBySession = events.groupBy { it.sessionId }
         val tagsBySession = logs.associate { it.sessionId to it.tags }
@@ -123,9 +146,25 @@ object TrendsAnalyzer {
                     speechCount = speechCount,
                     otherCount = (summary.totalEvents - snoringCount - coughCount - speechCount)
                         .coerceAtLeast(0),
+                    snoreSoundEnabled = session.snoreSoundEnabled,
+                    soundPlays = playsBySession[session.id] ?: 0,
                 )
             }
             .sortedBy { it.startEpochMs } // cronológico: izquierda→derecha en la gráfica
+    }
+
+    /** null si el experimento nunca se activó. */
+    fun soundExperiment(metrics: List<NightMetrics>): SoundExperiment? {
+        val (on, off) = metrics.partition { it.snoreSoundEnabled }
+        if (on.isEmpty()) return null
+        fun avg(list: List<NightMetrics>) = if (list.isEmpty()) 0.0 else list.sumOf { it.snoringMinutes } / list.size
+        return SoundExperiment(
+            nightsOn = on.size,
+            nightsOff = off.size,
+            avgSnoringOn = avg(on),
+            avgSnoringOff = avg(off),
+            totalPlays = on.sumOf { it.soundPlays },
+        )
     }
 
     fun overview(metrics: List<NightMetrics>): TrendsOverview {

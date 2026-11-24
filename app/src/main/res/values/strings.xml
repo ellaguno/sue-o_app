@@ -145,14 +145,14 @@
 
     <!-- Horario de sueño -->
     <string name="schedule_title">Sleep schedule</string>
-    <string name="schedule_help">Stop —and, if you like, start— monitoring automatically at your usual times.</string>
+    <string name="schedule_help">Stop monitoring automatically at your wake-up time and, if you like, get a reminder at bedtime to start it with one tap.</string>
     <string name="schedule_bedtime">Bedtime</string>
     <string name="schedule_wake">Wake-up time</string>
     <string name="schedule_time_value">%1$02d:%2$02d</string>
     <string name="schedule_stop_note">Monitoring stops by itself around your wake-up time (it may vary by a few minutes to save battery). If you forget to stop it, it closes for you.</string>
-    <string name="schedule_autostart">Start monitoring automatically</string>
-    <string name="schedule_autostart_help">Requires having granted microphone permission at least once. On some phones the start may take a few minutes.</string>
-    <string name="schedule_exact_alarm_warning">Android doesn’t let Somnia schedule exact alarms, and without them monitoring can’t start by itself at bedtime. Allow “Alarms &amp; reminders” to turn it on.</string>
+    <string name="schedule_autostart">Remind me at bedtime</string>
+    <string name="schedule_autostart_help">At bedtime a notification appears: tap “Start” and monitoring begins, without opening the app and also from the lock screen. Somnia can’t turn on the microphone by itself: Android doesn’t allow any app to do that in the background, for privacy.</string>
+    <string name="schedule_exact_alarm_warning">For the reminder to arrive right at bedtime, Somnia needs to schedule exact alarms. Allow “Alarms &amp; reminders”.</string>
     <string name="schedule_exact_alarm_action">Allow exact alarms</string>
     <string name="schedule_alt_toggle">Different schedule on some days</string>
     <string name="schedule_alt_help">Choose the days with a different schedule (for example, the weekend). Each day refers to the night that starts that day: Friday night ends on Saturday morning.</string>
@@ -347,4 +347,50 @@
     <string name="pdf_tile_pause_nights">Nights with pauses</string>
     <string name="pdf_trends_body_chart">Body sounds per night</string>
     <string name="pdf_corr_note">Average minutes snoring on nights with each sleep-log tag versus nights without it. It’s a correlation, not cause and effect.</string>
+
+    <!-- Experimento: sonido suave al roncar (SesoLibre Sonidos) -->
+    <string name="snore_sound_title">Gentle sound when snoring</string>
+    <string name="snore_sound_badge">Experiment · Promising</string>
+    <string name="snore_sound_body">If Somnia detects several snores in a row, it plays a very low sound for 10 minutes: brown noise with low strings, fading in gradually and out slowly. It plays at most once every 40 minutes.</string>
+    <string name="snore_sound_science">What the science says: there is no evidence that a sound reduces snoring. What has support is vibration to change position. It is offered so you can measure it yourself: in Trends you will see your nights with and without this sound.</string>
+    <string name="snore_sound_mic_note">While it plays, Somnia doesn’t record events (the microphone hears it too). Those minutes are marked on the chart.</string>
+    <string name="snore_sound_volume_hint">It uses the phone’s media volume. Try how it sounds before sleeping and keep it low.</string>
+    <string name="snore_sound_preview">Hear how it sounds</string>
+    <string name="snore_sound_preview_stop">Stop</string>
+    <string name="snore_sound_preview_busy">Can’t preview while monitoring.</string>
+    <string name="snore_sound_disclaimer">Not a substitute for medical care.</string>
+    <string name="snore_sound_credits">Sound generated on the phone by the SesoLibre Sonidos engine. Cello samples: Versilian Studios (VSCO).</string>
+    <string name="night_sound_title">Gentle sound</string>
+    <string name="night_sound_line">%1$s – %2$s</string>
+    <string name="night_sound_cut">cut short</string>
+    <string name="night_sound_failed">couldn’t play</string>
+    <string name="night_sound_enabled_none">Turned on, but not needed: there were no snores in a row.</string>
+    <string name="night_sound_legend">Purple band: minutes when it played (no event detection).</string>
+    <string name="trends_sound_title">Experiment: sound when snoring</string>
+    <string name="trends_sound_line">With the sound on: %1$s min snoring per night · without it: %2$s min (Δ %3$s)</string>
+    <string name="trends_sound_need_off">No nights without the sound to compare yet. Turn it off for a few nights to see the difference.</string>
+    <string name="trends_sound_note">It’s a comparison between your own nights, not proof: many things change from one night to the next. The more nights of each kind, the more reliable.</string>
+    <string name="home_sleep_sound">Sound to fall asleep (Sonidos app)</string>
+    <string name="pdf_sound_title">Gentle sound when snoring (experiment)</string>
+    <string name="pdf_sound_line">• %1$s – %2$s</string>
+    <string name="pdf_sound_none">The experiment was on, but it didn’t play.</string>
+
+    <!-- Recordatorio a la hora de dormir -->
+    <string name="channel_bedtime_name">Bedtime</string>
+    <string name="channel_bedtime_desc">Reminder at bedtime to start monitoring with one tap</string>
+    <string name="bedtime_title">It’s bedtime</string>
+    <string name="bedtime_text">Tap “Start” to begin tonight’s monitoring.</string>
+    <string name="bedtime_text_blocked">Android doesn’t let Somnia turn on the microphone by itself. Tap “Start” to begin tonight’s monitoring.</string>
+    <string name="bedtime_action_start">Start</string>
+    <string name="schedule_notifications_off">Somnia’s notifications are turned off, so the reminder can’t appear.</string>
+    <string name="schedule_notifications_action">Turn on notifications</string>
+
+    <!-- Gráfica interactiva de la noche -->
+    <string name="timeline_hint">Tap the chart to see what happened at that moment. Pinch or double-tap to zoom in.</string>
+    <string name="timeline_reset">Show whole night</string>
+    <string name="timeline_range">%1$s – %2$s</string>
+    <string name="timeline_point">%1$s · ~%2$d dB</string>
+    <string name="timeline_event">%1$s at %2$s · peak %3$d dB</string>
+    <string name="timeline_no_event">No event recorded at that moment.</string>
+    <string name="timeline_sound_playing">Somnia’s gentle sound was playing (%1$s – %2$s): the high level is that sound, not the room.</string>
 </resources>

@@ -22,12 +22,14 @@ import javax.inject.Singleton
  *   a Doze, no pide permisos y no muestra ícono de alarma; puede dispararse con
  *   unos minutos de holgura (irrelevante para cerrar la sesión y mejor para la
  *   batería). Es la función principal.
- * - **Inicio (arranque):** [AlarmManager.setAlarmClock] porque arrancar un servicio
- *   en primer plano de micrófono desde segundo plano requiere una exención que solo
- *   dan las alarmas exactas de tipo despertador. Es opcional (opt-in) y exige el
- *   permiso `SCHEDULE_EXACT_ALARM`, que el usuario concede en Ajustes del sistema:
- *   sin él, [AlarmManager.setAlarmClock] lanza [SecurityException] (ver
- *   [canScheduleExactAlarms]).
+ * - **Aviso de inicio:** [AlarmManager.setAlarmClock], exacta, a la hora de dormir.
+ *   Ojo: NO arranca la grabación. Android permite que la alarma arranque el servicio,
+ *   pero sin micrófono (desde segundo plano solo se enciende tras un toque del
+ *   usuario; en Android 14+ lanza SecurityException; verificado en el Pixel el
+ *   2026-11-21). Por eso el receptor publica [BedtimeReminder]: un toque en
+ *   «Iniciar» arranca el monitoreo. Es opcional (opt-in) y exige el permiso
+ *   `SCHEDULE_EXACT_ALARM`; sin él, [AlarmManager.setAlarmClock] lanza
+ *   [SecurityException] (ver [canScheduleExactAlarms]).
  *
  * El [ScheduleReceiver] re-arma la siguiente ocurrencia cada vez que una alarma se
  * dispara, y también tras reiniciar el dispositivo.

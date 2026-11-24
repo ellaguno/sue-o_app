@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.ui.trends
 
+import com.sesolibre.somnia.stats.SoundExperiment
 import androidx.compose.ui.res.pluralStringResource
 import com.sesolibre.somnia.ui.components.BackButton
 import android.content.ClipData
@@ -59,6 +60,7 @@ fun TrendsScreen(
     val metrics by viewModel.metrics.collectAsStateWithLifecycle()
     val overview by viewModel.overview.collectAsStateWithLifecycle()
     val correlations by viewModel.correlations.collectAsStateWithLifecycle()
+    val soundExperiment by viewModel.soundExperiment.collectAsStateWithLifecycle()
     val shareRequest by viewModel.shareRequest.collectAsStateWithLifecycle()
     val emailDraft by viewModel.emailDraft.collectAsStateWithLifecycle()
 
@@ -153,6 +155,7 @@ fun TrendsScreen(
             item { SnoringChartCard(metrics) }
             item { NightBreakdownCard(metrics) }
             item { CorrelationsCard(correlations) }
+            soundExperiment?.let { experiment -> item { SoundExperimentCard(experiment) } }
         }
     }
 }
@@ -292,6 +295,43 @@ private fun NightBreakdownCard(metrics: List<NightMetrics>) {
                     )
                 }
             }
+        }
+    }
+}
+
+/** Noches con el sonido suave activado frente a noches sin él. */
+@Composable
+private fun SoundExperimentCard(e: SoundExperiment) {
+    Card {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(stringResource(R.string.trends_sound_title), style = MaterialTheme.typography.titleSmall)
+            Text(
+                pluralStringResource(R.plurals.trends_sound_nights, e.nightsOn, e.nightsOn, e.totalPlays),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            if (e.comparable) {
+                Text(
+                    stringResource(
+                        R.string.trends_sound_line,
+                        "%.1f".format(e.avgSnoringOn),
+                        "%.1f".format(e.avgSnoringOff),
+                        "%+.1f".format(e.deltaMinutes),
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            } else {
+                Text(
+                    stringResource(R.string.trends_sound_need_off),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(
+                stringResource(R.string.trends_sound_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

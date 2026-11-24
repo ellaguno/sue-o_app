@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.export
 
+import com.sesolibre.somnia.data.db.SoundPlay
 import com.sesolibre.somnia.util.LocalDates
 import android.content.Context
 import com.sesolibre.somnia.R
@@ -35,6 +36,8 @@ data class NightReportData(
     val profile: UserProfile?,
     val epworth: QuestionnaireResult?,
     val stopBang: QuestionnaireResult?,
+    /** Veces que sonó el sonido suave (experimento opcional). */
+    val soundPlays: List<SoundPlay> = emptyList(),
 )
 
 /**
@@ -113,7 +116,7 @@ object PdfReport {
             val rect = pdf.block(130f)
             PdfCharts.noiseTimeline(
                 pdf.canvas, rect, data.samples, data.events,
-                session.startEpochMs, endMs, offset, zone,
+                session.startEpochMs, endMs, offset, zone, data.soundPlays,
             ) { hourFmt.format(Instant.ofEpochMilli(it)) }
             val legendItems = SomniaCategory.entries.map {
                 ReportLabels.category(context, it) to PdfCharts.argb(it)
@@ -200,6 +203,26 @@ object PdfReport {
             if (patterns.size > MAX_PAUSES_LISTED) {
                 pdf.text(context.getString(R.string.pdf_more_items, patterns.size - MAX_PAUSES_LISTED), pdf.small)
             }
+        }
+
+        // --- Sonido suave al roncar (experimento) ---
+        if (session.snoreSoundEnabled || data.soundPlays.isNotEmpty()) {
+            pdf.section(context.getString(R.string.pdf_sound_title))
+            if (data.soundPlays.isEmpty()) {
+                pdf.text(context.getString(R.string.pdf_sound_none), pdf.small)
+            } else {
+                pdf.text(
+                    context.resources.getQuantityString(
+                        R.plurals.night_sound_count, data.soundPlays.size, data.soundPlays.size,
+                    ),
+                )
+                data.soundPlays.forEach { play ->
+                    val end = play.endEpochMs ?: (play.startEpochMs + 10 * 60_000L)
+                    pdf.text(context.getString(R.string.pdf_sound_line, timeFmt.format(at(play.startEpochMs)), timeFmt.format(at(end))))
+                }
+                pdf.wrapped(context.getString(R.string.night_sound_legend), pdf.small)
+            }
+            pdf.wrapped(context.getString(R.string.snore_sound_science), pdf.small)
         }
 
         // --- Bitácora ---

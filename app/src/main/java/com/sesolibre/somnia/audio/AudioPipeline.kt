@@ -43,6 +43,14 @@ class AudioPipeline(
     private var secondCount = 0
 
     private var frameIndex = 0L
+
+    /**
+     * Mientras es true no se detectan eventos (el micrófono oiría el sonido que
+     * toca Somnia y lo tomaría por ronquidos o "música"). Las lecturas de nivel
+     * por segundo siguen registrándose. Se cambia desde otro hilo.
+     */
+    @Volatile
+    var eventsMuted: Boolean = false
     private var eventPcm: MutableList<ShortArray>? = null
     private var eventPrerollSamples = 0
 
@@ -80,6 +88,14 @@ class AudioPipeline(
         // El evento abierto acumula su PCM ANTES de escribir al ring,
         // para no duplicar este frame en el pre-roll.
         eventPcm?.add(frame.copyOf())
+
+        if (eventsMuted) {
+            detector.skip()
+            eventPcm = null
+            ring.write(frame)
+            frameIndex++
+            return
+        }
 
         when (val signal = detector.process(frameDb)) {
             is EventDetector.Signal.Start -> {

@@ -1,5 +1,10 @@
 package com.sesolibre.somnia.ui.settings
 
+import kotlinx.coroutines.flow.map
+import com.sesolibre.somnia.sonidos.NightSoundPlayer
+import com.sesolibre.somnia.data.MonitorStateHolder
+import dagger.hilt.android.qualifiers.ApplicationContext
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sesolibre.somnia.data.prefs.SettingsRepository
@@ -16,6 +21,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
+    @ApplicationContext private val appContext: Context,
+    private val stateHolder: MonitorStateHolder,
     private val settings: SettingsRepository,
     private val sleepScheduler: SleepScheduler,
 ) : ViewModel() {
@@ -45,6 +52,39 @@ class SettingsViewModel @Inject constructor(
 
     fun setReportEmail(email: String) {
         viewModelScope.launch { settings.setReportEmail(email) }
+    }
+
+    // --- Experimento: sonido suave al roncar ---
+
+    val snoreSound: StateFlow<Boolean> = settings.snoreSound
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    fun setSnoreSound(enabled: Boolean) {
+        viewModelScope.launch { settings.setSnoreSound(enabled) }
+    }
+
+    /** Si se está monitoreando: el ajuste aplica a la siguiente noche y no se puede probar el sonido. */
+    val monitoring: StateFlow<Boolean> = stateHolder.state
+        .map { it.running }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    private val previewPlayer = NightSoundPlayer(appContext)
+    private val _previewing = MutableStateFlow(false)
+    val previewing: StateFlow<Boolean> = _previewing.asStateFlow()
+
+    /** Escuchar la receta despierto, para ajustar el volumen antes de dormir. */
+    fun togglePreview() {
+        if (_previewing.value) {
+            previewPlayer.stop()
+            return
+        }
+        if (stateHolder.state.value.running) return
+        if (previewPlayer.start { _, _ -> _previewing.value = false }) _previewing.value = true
+    }
+
+    override fun onCleared() {
+        previewPlayer.stop()
+        super.onCleared()
     }
 
     // --- Horario de sueño ---

@@ -44,6 +44,17 @@ class SettingsRepository @Inject constructor(
         context.settingsDataStore.edit { it[KEY_TRANSCRIBE_SPEECH] = enabled }
     }
 
+    /**
+     * Experimento opcional: tocar un sonido suave (SesoLibre Sonidos) cuando
+     * se detectan ronquidos. Apagado por defecto.
+     */
+    val snoreSound: Flow<Boolean> = context.settingsDataStore.data
+        .map { it[KEY_SNORE_SOUND] ?: false }
+
+    suspend fun setSnoreSound(enabled: Boolean) {
+        context.settingsDataStore.edit { it[KEY_SNORE_SOUND] = enabled }
+    }
+
     /** Si ya se mostró la bienvenida (colocación del teléfono, privacidad, batería). */
     val onboardingDone: Flow<Boolean> = context.settingsDataStore.data
         .map { it[KEY_ONBOARDING_DONE] ?: false }
@@ -142,6 +153,7 @@ class SettingsRepository @Inject constructor(
         private val KEY_OPEN_MARGIN_DB = doublePreferencesKey("open_margin_db")
         private val KEY_TRANSCRIBE_SPEECH = booleanPreferencesKey("transcribe_speech")
         private val KEY_ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
+        private val KEY_SNORE_SOUND = booleanPreferencesKey("snore_sound")
         private val KEY_REPORT_EMAIL = stringPreferencesKey("report_email")
         private val KEY_SCHED_ENABLED = booleanPreferencesKey("schedule_enabled")
         private val KEY_SCHED_AUTOSTART = booleanPreferencesKey("schedule_auto_start")

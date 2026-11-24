@@ -141,14 +141,14 @@
 
     <!-- Horario de sueño -->
     <string name="schedule_title">Horario de sueño</string>
-    <string name="schedule_help">Detén —y si quieres, inicia— el monitoreo automáticamente a tus horas habituales.</string>
+    <string name="schedule_help">Detén el monitoreo automáticamente a tu hora de despertar y, si quieres, recibe un aviso a tu hora de dormir para iniciarlo con un toque.</string>
     <string name="schedule_bedtime">Hora de dormir</string>
     <string name="schedule_wake">Hora de despertar</string>
     <string name="schedule_time_value">%1$02d:%2$02d</string>
     <string name="schedule_stop_note">El monitoreo se detiene solo cerca de tu hora de despertar (puede variar unos minutos para cuidar la batería). Si olvidas detenerlo, se cierra por ti.</string>
-    <string name="schedule_autostart">Iniciar monitoreo automáticamente</string>
-    <string name="schedule_autostart_help">Requiere haber concedido el permiso de micrófono al menos una vez. En algunos teléfonos el inicio puede tardar unos minutos.</string>
-    <string name="schedule_exact_alarm_warning">Android no permite que Somnia programe alarmas exactas, y sin eso el monitoreo no puede arrancar solo a tu hora de dormir. Concede «Alarmas y recordatorios» para activarlo.</string>
+    <string name="schedule_autostart">Recordarme a mi hora de dormir</string>
+    <string name="schedule_autostart_help">A tu hora de dormir aparece una notificación: toca «Iniciar» y el monitoreo empieza, sin abrir la app y también desde la pantalla de bloqueo. Somnia no puede encender el micrófono sola: Android no lo permite a ninguna app en segundo plano, por privacidad.</string>
+    <string name="schedule_exact_alarm_warning">Para que el aviso llegue justo a tu hora de dormir, Somnia necesita poder programar alarmas exactas. Concede «Alarmas y recordatorios».</string>
     <string name="schedule_exact_alarm_action">Permitir alarmas exactas</string>
     <string name="schedule_alt_toggle">Horario distinto ciertos días</string>
     <string name="schedule_alt_help">Elige los días con otro horario (por ejemplo, el fin de semana). Cada día se refiere a la noche que empieza ese día: la noche del viernes termina el sábado por la mañana.</string>
@@ -343,4 +343,50 @@
     <string name="pdf_tile_pause_nights">Noches con pausas</string>
     <string name="pdf_trends_body_chart">Sonidos del cuerpo por noche</string>
     <string name="pdf_corr_note">Promedio de minutos roncando en las noches con cada etiqueta de la bitácora frente a las noches sin ella. Es una correlación, no causa-efecto.</string>
+
+    <!-- Experimento: sonido suave al roncar (SesoLibre Sonidos) -->
+    <string name="snore_sound_title">Sonido suave al roncar</string>
+    <string name="snore_sound_badge">Experimento · Prometedor</string>
+    <string name="snore_sound_body">Si Somnia detecta varios ronquidos seguidos, toca un sonido muy bajo durante 10 minutos: ruido marrón con cuerdas graves, que entra poco a poco y se va despacio. Suena como máximo una vez cada 40 minutos.</string>
+    <string name="snore_sound_science">Qué dice la ciencia: no hay evidencia de que un sonido reduzca los ronquidos. Lo que tiene respaldo es la vibración para cambiar de postura. Se ofrece para que lo midas tú: en Tendencias verás tus noches con y sin este sonido.</string>
+    <string name="snore_sound_mic_note">Mientras suena, Somnia no registra eventos (el micrófono también lo oye). Esos minutos quedan marcados en la gráfica.</string>
+    <string name="snore_sound_volume_hint">Usa el volumen multimedia del teléfono. Prueba cómo suena antes de dormir y déjalo bajo.</string>
+    <string name="snore_sound_preview">Escuchar cómo suena</string>
+    <string name="snore_sound_preview_stop">Detener</string>
+    <string name="snore_sound_preview_busy">No se puede probar mientras se monitorea.</string>
+    <string name="snore_sound_disclaimer">No sustituye atención médica.</string>
+    <string name="snore_sound_credits">Sonido generado en el teléfono por el núcleo de SesoLibre Sonidos. Muestras de chelo: Versilian Studios (VSCO).</string>
+    <string name="night_sound_title">Sonido suave</string>
+    <string name="night_sound_line">%1$s – %2$s</string>
+    <string name="night_sound_cut">cortado</string>
+    <string name="night_sound_failed">no pudo sonar</string>
+    <string name="night_sound_enabled_none">Activado, pero no hizo falta: no hubo ronquidos seguidos.</string>
+    <string name="night_sound_legend">Franja morada: minutos en que sonó (sin detección de eventos).</string>
+    <string name="trends_sound_title">Experimento: sonido al roncar</string>
+    <string name="trends_sound_line">Con el sonido activado: %1$s min roncando por noche · sin él: %2$s min (Δ %3$s)</string>
+    <string name="trends_sound_need_off">Aún no hay noches sin el sonido para comparar. Apágalo algunas noches para ver la diferencia.</string>
+    <string name="trends_sound_note">Es una comparación entre tus propias noches, no una prueba: muchas cosas cambian de una noche a otra. Mientras más noches de cada tipo, más confiable.</string>
+    <string name="home_sleep_sound">Sonido para dormir (app Sonidos)</string>
+    <string name="pdf_sound_title">Sonido suave al roncar (experimento)</string>
+    <string name="pdf_sound_line">• %1$s – %2$s</string>
+    <string name="pdf_sound_none">El experimento estaba activado, pero no llegó a sonar.</string>
+
+    <!-- Recordatorio a la hora de dormir -->
+    <string name="channel_bedtime_name">Hora de dormir</string>
+    <string name="channel_bedtime_desc">Aviso a tu hora de dormir para iniciar el monitoreo con un toque</string>
+    <string name="bedtime_title">Es hora de dormir</string>
+    <string name="bedtime_text">Toca «Iniciar» para empezar el monitoreo de esta noche.</string>
+    <string name="bedtime_text_blocked">Android no deja que Somnia encienda el micrófono sola. Toca «Iniciar» para empezar el monitoreo de esta noche.</string>
+    <string name="bedtime_action_start">Iniciar</string>
+    <string name="schedule_notifications_off">Las notificaciones de Somnia están desactivadas, así que el aviso no podrá aparecer.</string>
+    <string name="schedule_notifications_action">Activar notificaciones</string>
+
+    <!-- Gráfica interactiva de la noche -->
+    <string name="timeline_hint">Toca la gráfica para ver qué pasó en ese momento. Pellizca o toca dos veces para acercar.</string>
+    <string name="timeline_reset">Ver toda la noche</string>
+    <string name="timeline_range">%1$s – %2$s</string>
+    <string name="timeline_point">%1$s · ~%2$d dB</string>
+    <string name="timeline_event">%1$s a las %2$s · pico %3$d dB</string>
+    <string name="timeline_no_event">Sin evento registrado en ese momento.</string>
+    <string name="timeline_sound_playing">Sonaba el sonido suave de Somnia (%1$s – %2$s): el nivel alto es ese sonido, no la habitación.</string>
 </resources>

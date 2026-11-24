@@ -23,6 +23,31 @@ data class SessionWithStats(
 data class SessionPeak(val sessionId: Long, val dbMax: Double)
 
 @Dao
+interface SoundPlayDao {
+    @Insert
+    suspend fun insert(play: SoundPlay): Long
+
+    @Query("UPDATE sound_plays SET endEpochMs = :endMs, endReason = :reason WHERE id = :id")
+    suspend fun close(id: Long, endMs: Long, reason: String)
+
+    /**
+     * Las que quedaron sin cerrar porque el proceso murió mientras sonaban: se
+     * cierran como si hubieran durado lo de la receta (10 min).
+     */
+    @Query(
+        "UPDATE sound_plays SET endEpochMs = startEpochMs + 600000, endReason = 'stopped' " +
+            "WHERE endEpochMs IS NULL AND sessionId != :exceptSessionId"
+    )
+    suspend fun closeDangling(exceptSessionId: Long)
+
+    @Query("SELECT * FROM sound_plays WHERE sessionId = :sessionId ORDER BY startEpochMs")
+    fun bySession(sessionId: Long): Flow<List<SoundPlay>>
+
+    @Query("SELECT * FROM sound_plays")
+    fun observeAll(): Flow<List<SoundPlay>>
+}
+
+@Dao
 interface SessionDao {
     @Insert
     suspend fun insert(session: Session): Long

@@ -64,6 +64,21 @@ class EventDetector(private val config: Config = Config()) {
     private var sum = 0.0
     private var count = 0
 
+    /**
+     * Cuenta un frame sin analizarlo (mientras suena el sonido de Somnia, que
+     * el micrófono también oye). Mantiene el reloj de frames, deja intacto el
+     * ruido de fondo y descarta el evento que estuviera abierto.
+     *
+     * @return true si había un evento abierto que se descartó.
+     */
+    fun skip(): Boolean {
+        frameIndex++
+        val wasOpen = inEvent
+        inEvent = false
+        silentFrames = 0
+        return wasOpen
+    }
+
     /** Procesa el nivel de un frame; devuelve una señal si algo cambió. */
     fun process(dbfs: Double): Signal? {
         frameIndex++

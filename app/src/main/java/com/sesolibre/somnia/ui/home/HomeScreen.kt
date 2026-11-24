@@ -1,5 +1,7 @@
 package com.sesolibre.somnia.ui.home
 
+import com.sesolibre.somnia.ui.components.SomniaLogo
+import androidx.core.net.toUri
 import com.sesolibre.somnia.util.LocalDates
 import androidx.compose.ui.res.pluralStringResource
 import android.content.Context
@@ -106,17 +108,9 @@ fun HomeScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.somnia_header),
+                        SomniaLogo(
                             contentDescription = stringResource(R.string.app_name),
-                            contentScale = ContentScale.Fit,
-                            alignment = Alignment.CenterStart,
-                            // weight(1f) da TODO el ancho libre de la fila: sin él
-                            // el ancho se queda en el intrínseco del PNG (72 dp) y
-                            // Fit encogería el logo a 21 dp de alto.
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(72.dp),
+                            modifier = Modifier.weight(1f),
                         )
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = onOpenProfile) {
@@ -271,6 +265,10 @@ private fun MonitorCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Button(onClick = onStart) { Text(stringResource(R.string.start_monitoring)) }
+                val context = LocalContext.current
+                TextButton(onClick = { openSleepSound(context) }) {
+                    Text(stringResource(R.string.home_sleep_sound))
+                }
             }
         }
     }
@@ -321,6 +319,28 @@ private fun openBatterySettings(context: Context) {
         }
     }
 }
+
+/**
+ * Rutina de acostarse (usuario despierto): abre SesoLibre Sonidos con una
+ * receta para dormir. No hace falta embeber nada; si Sonidos no está
+ * instalada, se abre su ficha en Play.
+ */
+private fun openSleepSound(context: Context) {
+    val deepLink = Intent(Intent.ACTION_VIEW, SONIDOS_SLEEP_LINK.toUri())
+    runCatching { context.startActivity(deepLink) }.onFailure {
+        val market = Intent(Intent.ACTION_VIEW, "market://details?id=$SONIDOS_PACKAGE".toUri())
+        runCatching { context.startActivity(market) }.onFailure {
+            runCatching {
+                context.startActivity(
+                    Intent(Intent.ACTION_VIEW, "https://play.google.com/store/apps/details?id=$SONIDOS_PACKAGE".toUri()),
+                )
+            }
+        }
+    }
+}
+
+private const val SONIDOS_PACKAGE = "com.sesolibre.sonidos"
+private const val SONIDOS_SLEEP_LINK = "sesolibre-sonidos://tocar?receta=dormir.mar-cuerdas&min=30"
 
 private fun isIgnoringBatteryOptimizations(context: Context): Boolean =
     (context.getSystemService(Context.POWER_SERVICE) as PowerManager)

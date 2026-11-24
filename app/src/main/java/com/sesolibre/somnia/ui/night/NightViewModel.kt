@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.ui.night
 
+import com.sesolibre.somnia.data.db.SoundPlay
 import com.sesolibre.somnia.util.LocalDates
 import android.content.Context
 import android.media.MediaPlayer
@@ -84,8 +85,9 @@ class NightViewModel @Inject constructor(
         repository.observeSession(sessionId),
         repository.events(sessionId),
         repository.samples(sessionId),
-    ) { session, events, samples ->
-        session?.let { NightAnalyzer.summarize(it, events, samples) }
+        repository.soundPlays(sessionId),
+    ) { session, events, samples, plays ->
+        session?.let { NightAnalyzer.summarize(it, events, samples, plays.map(SoundPlay::range)) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     /** "Lo más relevante": pocos clips destacados para escuchar. */
@@ -133,7 +135,8 @@ class NightViewModel @Inject constructor(
         val s = repository.observeSession(sessionId).first() ?: return null
         val evts = repository.events(sessionId).first()
         val smp = repository.samples(sessionId).first()
-        val sum = NightAnalyzer.summarize(s, evts, smp)
+        val plays = repository.soundPlays(sessionId).first()
+        val sum = NightAnalyzer.summarize(s, evts, smp, plays.map(SoundPlay::range))
         val log = repository.nightLog(sessionId).first()
         return NightReportData(
             session = s,
@@ -147,6 +150,7 @@ class NightViewModel @Inject constructor(
             profile = profile.first(),
             epworth = epworth.first(),
             stopBang = stopBang.first(),
+            soundPlays = plays,
         )
     }
 
@@ -261,6 +265,10 @@ class NightViewModel @Inject constructor(
     val sleepsAlone: StateFlow<Boolean> = profileRepository.observeProfile()
         .map { it?.sleepsAlone ?: true }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    /** Veces que sonó el sonido suave esta noche (experimento opcional). */
+    val soundPlays: StateFlow<List<SoundPlay>> = repository.soundPlays(sessionId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val nightLog: StateFlow<NightLog?> = repository.nightLog(sessionId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)

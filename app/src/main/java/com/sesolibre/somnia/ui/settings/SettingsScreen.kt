@@ -1,5 +1,7 @@
 package com.sesolibre.somnia.ui.settings
 
+import androidx.compose.runtime.remember
+import com.sesolibre.somnia.schedule.BedtimeReminder
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.runtime.mutableStateOf
@@ -72,6 +74,9 @@ fun SettingsScreen(
     val altWakeMinutes by viewModel.altWakeMinutes.collectAsStateWithLifecycle()
     val exactAlarmAllowed by viewModel.exactAlarmAllowed.collectAsStateWithLifecycle()
     val reportEmail by viewModel.reportEmail.collectAsStateWithLifecycle()
+    val snoreSound by viewModel.snoreSound.collectAsStateWithLifecycle()
+    val previewing by viewModel.previewing.collectAsStateWithLifecycle()
+    val monitoring by viewModel.monitoring.collectAsStateWithLifecycle()
 
     // El permiso se concede en Ajustes del sistema: hay que releerlo al volver.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshExactAlarmPermission() }
@@ -120,6 +125,13 @@ fun SettingsScreen(
             TranscriptionCard(
                 enabled = transcribeSpeech,
                 onToggle = viewModel::setTranscribeSpeech,
+            )
+            SnoreSoundCard(
+                enabled = snoreSound,
+                onToggle = viewModel::setSnoreSound,
+                previewing = previewing,
+                canPreview = !monitoring,
+                onPreview = viewModel::togglePreview,
             )
             ReportEmailCard(savedEmail = reportEmail, onSave = viewModel::setReportEmail)
             Spacer(Modifier.height(16.dp))
@@ -206,6 +218,7 @@ private fun ScheduleCard(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     if (!exactAlarmAllowed) ExactAlarmWarning()
+                    NotificationsWarning()
                 }
 
                 HorizontalDivider()
@@ -371,6 +384,111 @@ private fun TranscriptionCard(
             ) {
                 Text(stringResource(R.string.transcription_download_languages))
             }
+        }
+    }
+}
+
+/**
+ * Experimento opcional de SesoLibre Sonidos. Se presenta como lo que es: sin
+ * evidencia de que reduzca ronquidos, para medirlo en casa (ver PALABRAS.md
+ * del repositorio sesolibre-sonidos: nada de curar, tratar ni terapia).
+ */
+/** El recordatorio de la hora de dormir es una notificación: si están apagadas, avisar. */
+@Composable
+private fun NotificationsWarning() {
+    val context = LocalContext.current
+    var canNotify by remember { mutableStateOf(BedtimeReminder.canNotify(context)) }
+    // Se activan en Ajustes del sistema: releer al volver.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { canNotify = BedtimeReminder.canNotify(context) }
+    if (canNotify) return
+    Text(
+        stringResource(R.string.schedule_notifications_off),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.error,
+    )
+    TextButton(onClick = {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        runCatching { context.startActivity(intent) }
+    }) { Text(stringResource(R.string.schedule_notifications_action)) }
+}
+
+@Composable
+private fun SnoreSoundCard(
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+    previewing: Boolean,
+    canPreview: Boolean,
+    onPreview: () -> Unit,
+) {
+    Card {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        stringResource(R.string.snore_sound_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        stringResource(R.string.snore_sound_badge),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
+                Switch(checked = enabled, onCheckedChange = onToggle)
+            }
+            Text(
+                stringResource(R.string.snore_sound_body),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                stringResource(R.string.snore_sound_science),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                stringResource(R.string.snore_sound_mic_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                stringResource(R.string.snore_sound_volume_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            TextButton(onClick = onPreview, enabled = canPreview || previewing) {
+                Text(
+                    stringResource(
+                        if (previewing) R.string.snore_sound_preview_stop else R.string.snore_sound_preview,
+                    ),
+                )
+            }
+            if (!canPreview && !previewing) {
+                Text(
+                    stringResource(R.string.snore_sound_preview_busy),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Text(
+                stringResource(R.string.snore_sound_disclaimer),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                stringResource(R.string.snore_sound_credits),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.schedule
 
+import android.app.ActivityManager
 import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -50,17 +51,30 @@ class ScheduleReceiver : BroadcastReceiver() {
         }
     }
 
-    /** Arranca el monitoreo solo si ya se concedió el micrófono (no se puede pedir en 2.º plano). */
+    /**
+     * Hora de dormir. Android no deja encender el micrófono desde segundo plano
+     * (ni con alarma exacta), así que lo normal es AVISAR con una notificación:
+     * un toque en «Iniciar» arranca el monitoreo. Solo si Somnia está en pantalla
+     * en ese momento se puede iniciar directamente.
+     */
     private fun maybeStart(context: Context) {
+        if (stateHolder.state.value.running) return
         val micGranted = ContextCompat.checkSelfPermission(
             context, Manifest.permission.RECORD_AUDIO,
         ) == PackageManager.PERMISSION_GRANTED
-        if (!micGranted) {
-            Log.w(TAG, "inicio automático omitido: falta permiso de micrófono")
+        if (micGranted && isAppInForeground()) {
+            runCatching { MonitorService.start(context) }
+                .onFailure { Log.w(TAG, "no se pudo iniciar el monitoreo", it) }
             return
         }
-        runCatching { MonitorService.start(context) }
-            .onFailure { Log.w(TAG, "no se pudo iniciar el monitoreo", it) }
+        BedtimeReminder.post(context)
+    }
+
+    /** Somnia visible en pantalla: el único caso en que Android permite grabar sin un toque. */
+    private fun isAppInForeground(): Boolean {
+        val info = ActivityManager.RunningAppProcessInfo()
+        ActivityManager.getMyMemoryState(info)
+        return info.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
     }
 
     /**
@@ -70,6 +84,8 @@ class ScheduleReceiver : BroadcastReceiver() {
      * siempre, ya que el estado en memoria se pierde con el proceso).
      */
     private suspend fun maybeStop(context: Context) {
+        // Si el recordatorio no se tocó, ya no tiene sentido a la hora de despertar.
+        BedtimeReminder.cancel(context)
         val running = stateHolder.state.value
         if (running.running) {
             runCatching { MonitorService.stop(context) }

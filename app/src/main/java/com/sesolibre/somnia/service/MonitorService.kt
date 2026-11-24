@@ -1,5 +1,6 @@
 package com.sesolibre.somnia.service
 
+import com.sesolibre.somnia.schedule.BedtimeReminder
 import android.Manifest
 import android.app.Notification
 import android.app.PendingIntent
@@ -41,6 +42,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.job
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.runBlocking
+import com.sesolibre.somnia.ml.SomniaCategory
+import com.sesolibre.somnia.sonidos.NightSoundPlayer
+import com.sesolibre.somnia.sonidos.SnoreSoundTrigger
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -83,6 +88,15 @@ class MonitorService : LifecycleService() {
     private val eventScope = CoroutineScope(SupervisorJob() + eventDispatcher)
 
     private val aggregator = NoiseAggregator()
+
+    /** Experimento "sonido suave al roncar" (se lee al iniciar la noche). */
+    @Volatile private var snoreSoundEnabled = false
+    /** El arranque vino del botón «Iniciar» del recordatorio. */
+    private var fromReminder = false
+    /** Mientras suena (y unos segundos después) no se detectan eventos. */
+    @Volatile private var soundPlaying = false
+    private var soundPlayer: NightSoundPlayer? = null
+    private val snoreTrigger = SnoreSoundTrigger()
     private var sessionId: Long = -1
     private var sessionStartMs: Long = 0
     /**
@@ -109,6 +123,7 @@ class MonitorService : LifecycleService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        fromReminder = intent?.getBooleanExtra(EXTRA_FROM_REMINDER, false) == true
         when (intent?.action) {
             ACTION_STOP -> stopMonitoring()
             // intent null = el sistema relanzó el servicio (START_STICKY) tras
@@ -131,18 +146,30 @@ class MonitorService : LifecycleService() {
         // Si el sistema no nos deja pasar a primer plano (p. ej. el arranque
         // automático llegó sin la exención de alarma exacta), no dejamos el
         // servicio a medias: se cae ordenadamente en vez de crashear.
+        // Lectura rápida del ajuste (archivo local pequeño): hace falta ANTES de
+        // pasar a primer plano, porque define el tipo de servicio.
+        snoreSoundEnabled = runBlocking {
+            withTimeoutOrNull(SETTINGS_READ_TIMEOUT_MS) { settings.snoreSound.first() } ?: false
+        }
+        val serviceTypes = ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or
+            if (snoreSoundEnabled) ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK else 0
         try {
             ServiceCompat.startForeground(
                 this,
                 NOTIFICATION_ID,
                 buildNotification(elapsedText = "00:00", dbText = "—"),
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE,
+                serviceTypes,
             )
         } catch (t: Throwable) {
             android.util.Log.e(TAG, "no se pudo iniciar en primer plano", t)
+            // Android bloqueó el micrófono desde segundo plano (p. ej. el sistema
+            // relanzó el servicio): en vez de fallar en silencio, dejar el aviso
+            // para que un toque lo inicie. Si ya venía del aviso, no repetirlo.
+            if (!fromReminder) BedtimeReminder.post(this, failedToStart = true)
             stopSelf()
             return
         }
+        BedtimeReminder.cancel(this)
 
         wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager)
             .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "somnia:monitor")
@@ -166,7 +193,7 @@ class MonitorService : LifecycleService() {
                 android.util.Log.i(TAG, "noche $sessionId retomada tras reinicio del servicio")
             } else {
                 sessionStartMs = nowMs
-                sessionId = repository.startSession(nowMs, batteryPct())
+                sessionId = repository.startSession(nowMs, batteryPct(), snoreSoundEnabled)
             }
             stateHolder.update {
                 MonitorState(
@@ -189,7 +216,7 @@ class MonitorService : LifecycleService() {
             detector = EventDetector(EventDetector.Config(openMarginDb = openMarginDb)),
             onSecondReading = ::onSecondReading,
             onEventCaptured = ::onEventCaptured,
-        )
+        ).also { it.eventsMuted = soundPlaying }
     }
 
     private fun startAudioEngine() {
@@ -298,6 +325,47 @@ class MonitorService : LifecycleService() {
                 )
             )
             stateHolder.update { it.copy(eventsDetected = it.eventsDetected + 1) }
+
+            if (snoreSoundEnabled && classification?.category == SomniaCategory.SNORING) {
+                maybeStartSound(currentSessionId, baseMs + capture.startOffsetMs)
+            }
+        }
+    }
+
+    /**
+     * Experimento opcional: si la regla de disparo lo indica (varios ronquidos
+     * seguidos, y no recién sonó), toca el sonido suave de SesoLibre Sonidos.
+     * Mientras suena se deja de detectar eventos, porque el micrófono lo oye.
+     * Corre en el hilo de eventos.
+     */
+    private suspend fun maybeStartSound(sessionId: Long, snoreAtMs: Long) {
+        val go = synchronized(snoreTrigger) { snoreTrigger.onSnore(snoreAtMs) }
+        if (!go) return
+        if (stopping) {
+            synchronized(snoreTrigger) { snoreTrigger.onPlaybackEnded(snoreAtMs) }
+            return
+        }
+        soundPlaying = true
+        pipeline?.eventsMuted = true
+        val playId = repository.startSoundPlay(sessionId, System.currentTimeMillis(), NightSoundPlayer.RECIPE_ID)
+        val player = soundPlayer ?: NightSoundPlayer(applicationContext).also { soundPlayer = it }
+        val started = player.start { endMs, reason ->
+            eventScope.launch {
+                repository.endSoundPlay(playId, endMs, reason.name.lowercase())
+                // La cola del sonido y su eco en el cuarto: un margen antes de
+                // volver a detectar, para no registrar el propio sonido.
+                delay(SOUND_MUTE_GRACE_MS)
+                soundPlaying = false
+                pipeline?.eventsMuted = false
+                synchronized(snoreTrigger) { snoreTrigger.onPlaybackEnded(endMs) }
+            }
+        }
+        if (!started) {
+            val now = System.currentTimeMillis()
+            repository.endSoundPlay(playId, now, NightSoundPlayer.EndReason.FAILED.name.lowercase())
+            soundPlaying = false
+            pipeline?.eventsMuted = false
+            synchronized(snoreTrigger) { snoreTrigger.onPlaybackEnded(now) }
         }
     }
 
@@ -346,6 +414,8 @@ class MonitorService : LifecycleService() {
         val endedSessionId = sessionId
         lifecycleScope.launch {
             val endMs = System.currentTimeMillis()
+            // Si estaba sonando, bajarlo con suavidad y cerrar su registro.
+            soundPlayer?.let { player -> withContext(Dispatchers.IO) { player.stopAndWait() } }
             // Que el último evento (clasificación + clip) alcance a guardarse.
             withTimeoutOrNull(EVENT_DRAIN_TIMEOUT_MS) {
                 eventScope.coroutineContext.job.children.toList().joinAll()
@@ -420,6 +490,7 @@ class MonitorService : LifecycleService() {
             .takeIf { it in 0..100 }
 
     override fun onDestroy() {
+        soundPlayer?.stop()
         audioEngine?.stop()
         wakeLock?.let { if (it.isHeld) it.release() }
         eventScope.cancel()
@@ -437,6 +508,8 @@ class MonitorService : LifecycleService() {
     companion object {
         const val ACTION_START = "com.sesolibre.somnia.action.START"
         const val ACTION_STOP = "com.sesolibre.somnia.action.STOP"
+        /** Extra: el arranque vino del recordatorio de la hora de dormir. */
+        const val EXTRA_FROM_REMINDER = "com.sesolibre.somnia.extra.FROM_REMINDER"
         private const val TAG = "MonitorService"
         private const val NOTIFICATION_ID = 1
         private const val NOTIFICATION_LOST_ID = 2
@@ -450,6 +523,9 @@ class MonitorService : LifecycleService() {
         private const val EVENT_DRAIN_TIMEOUT_MS = 10_000L
         /** Retomar la noche solo si el corte fue hace menos de esto. */
         private const val RESUME_MAX_GAP_MS = 30 * 60_000L
+        private const val SETTINGS_READ_TIMEOUT_MS = 500L
+        /** Tras terminar el sonido, segundos sin detectar (cola y eco del cuarto). */
+        private const val SOUND_MUTE_GRACE_MS = 3_000L
         private const val MAX_AUDIO_RESTARTS = 3
         /** Los reintentos solo se acumulan dentro de esta ventana. */
         private const val RESTART_WINDOW_MS = 30 * 60_000L

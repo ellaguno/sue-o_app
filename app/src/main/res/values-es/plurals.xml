@@ -35,4 +35,14 @@
         <item quantity="other">%d grabaciones</item>
         <item quantity="many">%d grabaciones</item>
     </plurals>
+    <plurals name="night_sound_count">
+        <item quantity="one">Sonó %d vez</item>
+        <item quantity="many">Sonó %d veces</item>
+        <item quantity="other">Sonó %d veces</item>
+    </plurals>
+    <plurals name="trends_sound_nights">
+        <item quantity="one">%1$d noche con el sonido activado · sonó %2$d veces</item>
+        <item quantity="many">%1$d noches con el sonido activado · sonó %2$d veces</item>
+        <item quantity="other">%1$d noches con el sonido activado · sonó %2$d veces</item>
+    </plurals>
 </resources>

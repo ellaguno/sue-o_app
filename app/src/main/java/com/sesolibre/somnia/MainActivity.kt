@@ -1,5 +1,6 @@
 package com.sesolibre.somnia
 
+import com.sesolibre.somnia.schedule.BedtimeReminder
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -63,6 +64,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null) handleReminderIntent(intent)
         setContent {
             SomniaTheme {
                 val onboardingDone by settings.onboardingDone.collectAsState(initial = null)
@@ -141,6 +143,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        handleReminderIntent(intent)
+    }
+
+    /** Se tocó el recordatorio de la hora de dormir: iniciar (pidiendo permisos si falta alguno). */
+    private fun handleReminderIntent(intent: Intent?) {
+        if (intent?.action != ACTION_START_FROM_REMINDER) return
+        BedtimeReminder.cancel(this)
+        startWithPermissions()
+    }
+
     private fun startWithPermissions() {
         val needed = buildList {
             if (!granted(Manifest.permission.RECORD_AUDIO)) add(Manifest.permission.RECORD_AUDIO)
@@ -157,4 +171,8 @@ class MainActivity : ComponentActivity() {
 
     private fun granted(permission: String): Boolean =
         ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
+    companion object {
+        const val ACTION_START_FROM_REMINDER = "com.sesolibre.somnia.action.START_FROM_REMINDER"
+    }
 }
