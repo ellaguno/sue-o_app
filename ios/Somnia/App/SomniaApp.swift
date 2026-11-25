@@ -8,9 +8,15 @@ struct SomniaApp: App {
 
     init() {
         do {
-            container = try ModelContainer(for: SleepSession.self, NoiseMinute.self, SoundEventRecord.self)
+            container = DemoMode.isActive
+                ? try DemoMode.container()
+                : try ModelContainer(for: SleepSession.self, NoiseMinute.self, SoundEventRecord.self)
         } catch {
             fatalError("No se pudo abrir la base de datos: \(error)")
+        }
+        if DemoMode.isActive {
+            DemoMode.seed(container.mainContext)
+            return
         }
         // Si iOS terminó la app a media noche, esa noche quedó abierta.
         MonitorController.closeDanglingSessions(in: container.mainContext)
@@ -32,7 +38,9 @@ struct RootView: View {
     @AppStorage("onboardingDone") private var onboardingDone = false
 
     var body: some View {
-        if onboardingDone {
+        if DemoMode.isActive {
+            DemoRootView()
+        } else if onboardingDone {
             NavigationStack { HomeView() }
         } else {
             WelcomeView { onboardingDone = true }
@@ -63,5 +71,27 @@ enum Theme {
     static func duration(minutes: Int?) -> String {
         guard let m = minutes else { return "—" }
         return String(format: "%dh %02dm", m / 60, m % 60)
+    }
+}
+
+/// Pantalla inicial en modo demostración (capturas del App Store).
+private struct DemoRootView: View {
+    @Query(sort: \SleepSession.start, order: .reverse) private var sessions: [SleepSession]
+
+    var body: some View {
+        switch DemoMode.shot {
+        case "welcome":
+            WelcomeView {}
+        case "night":
+            if let night = sessions.first {
+                NavigationStack { NightView(night: night) }
+            }
+        case "trends":
+            NavigationStack { TrendsView() }
+        case "settings":
+            NavigationStack { SettingsView() }
+        default:
+            NavigationStack { HomeView() }
+        }
     }
 }

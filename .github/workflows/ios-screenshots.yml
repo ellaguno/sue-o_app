@@ -1,0 +1,86 @@
+name: iOS (capturas para el App Store)
+
+# Toma las capturas del App Store en el simulador de iPhone 6,9" (1320×2868, el
+# tamaño que pide Apple), en español e inglés. Se corre a mano; las capturas
+# quedan como artefacto del run (somnia-capturas).
+#
+# La app arranca en modo demostración (-SomniaDemo, ver
+# ios/Somnia/App/DemoMode.swift): base de datos en memoria con noches de
+# ejemplo, y -SomniaShot elige la pantalla de cada captura.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  shots:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Elegir el Xcode más reciente
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
+
+      - name: Generar el proyecto (XcodeGen)
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Simulador de iPhone 6,9" (Pro Max)
+        run: |
+          RUNTIME=$(xcrun simctl list runtimes -j | python3 -c '
+          import json, sys
+          rts = [r for r in json.load(sys.stdin)["runtimes"] if r["platform"] == "iOS" and r["isAvailable"]]
+          print(sorted(rts, key=lambda r: [int(x) for x in r["version"].split(".")])[-1]["identifier"])')
+          TYPE=$(xcrun simctl list devicetypes -j | python3 -c '
+          import json, sys
+          names = [d for d in json.load(sys.stdin)["devicetypes"] if d["name"].startswith("iPhone") and d["name"].endswith("Pro Max")]
+          print(sorted(names, key=lambda d: d["name"])[-1]["identifier"])')
+          echo "Runtime $RUNTIME, dispositivo $TYPE"
+          UDID=$(xcrun simctl create capturas "$TYPE" "$RUNTIME")
+          echo "UDID=$UDID" >> "$GITHUB_ENV"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Compilar para el simulador
+        run: |
+          set -o pipefail
+          xcodebuild -project Somnia.xcodeproj -scheme Somnia -configuration Debug \
+            -destination "id=$UDID" -derivedDataPath "$RUNNER_TEMP/dd" \
+            CODE_SIGNING_ALLOWED=NO build | tail -20
+          APP=$(find "$RUNNER_TEMP/dd/Build/Products" -name "Somnia.app" -path "*iphonesimulator*" | head -1)
+          echo "APP=$APP" >> "$GITHUB_ENV"
+          xcrun simctl install "$UDID" "$APP"
+
+      - name: Capturas (es, en)
+        run: |
+          # Barra de estado limpia, como en las fichas de Apple.
+          xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged \
+            --batteryLevel 100 --cellularMode active --cellularBars 4 --wifiBars 3 || true
+          OUT="$GITHUB_WORKSPACE/capturas"
+          n=0
+          for lang in es en; do
+            mkdir -p "$OUT/$lang"
+            n=0
+            for shot in home night trends welcome; do
+              n=$((n + 1))
+              xcrun simctl launch --terminate-running-process "$UDID" com.sesolibre.somnia \
+                -SomniaDemo -SomniaShot "$shot" -AppleLanguages "($lang)" -AppleLocale "${lang}_MX"
+              sleep 8
+              xcrun simctl io "$UDID" screenshot "$OUT/$lang/iphone-$n-$shot.png"
+            done
+          done
+          ls -la "$OUT"/*
+          sips -g pixelWidth -g pixelHeight "$OUT/es/iphone-1-home.png"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: somnia-capturas
+          path: capturas
+          retention-days: 30
