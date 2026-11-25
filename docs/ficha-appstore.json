@@ -1,0 +1,52 @@
+{
+  "app": "6832695992",
+  "version": "1.0",
+  "copyright": "2026 Eduardo Llaguno",
+  "categorias": { "primaryCategory": "HEALTH_AND_FITNESS", "secondaryCategory": "LIFESTYLE" },
+  "edad": {
+    "booleanos": {
+      "advertising": false, "ageAssurance": false, "gambling": false, "healthOrWellnessTopics": true,
+      "lootBox": false, "messagingAndChat": false, "parentalControls": false, "unrestrictedWebAccess": false,
+      "userGeneratedContent": false, "socialMedia": false, "sharedLocation": false
+    },
+    "ninguno": [
+      "alcoholTobaccoOrDrugUseOrReferences", "contests", "gamblingSimulated", "gunsOrOtherWeapons",
+      "medicalOrTreatmentInformation", "profanityOrCrudeHumor", "sexualContentGraphicAndNudity",
+      "sexualContentOrNudity", "horrorOrFearThemes", "matureOrSuggestiveThemes",
+      "violenceCartoonOrFantasy", "violenceRealisticProlongedGraphicOrSadistic", "violenceRealistic"
+    ]
+  },
+  "idiomas": {
+    "es-MX": {
+      "capturas": "es",
+      "info": {
+        "name": "SesoLibre Somnia",
+        "subtitle": "Ronquidos y sueño, en privado",
+        "privacyPolicyUrl": "https://sesolibre.com/politica-de-privacidad-somnia/"
+      },
+      "version": {
+        "promotionalText": "Descubre cuánto roncas y qué pasa en tus noches. Todo se analiza en tu iPhone: sin cuentas, sin nube y sin subir tu audio.",
+        "keywords": "ronquidos,roncar,sueño,dormir,monitor,noche,ruido,apnea,tos,descanso,privado",
+        "supportUrl": "https://sesolibre.com",
+        "marketingUrl": "https://sesolibre.com",
+        "description": "Somnia es un monitor nocturno de sueño que hace todo su trabajo en tu propio iPhone. Escucha mientras duermes, detecta ronquidos y otros sonidos, y te muestra cómo fue tu noche, sin cuentas, sin servidores y sin nube.\n\nPRIVADO POR DISEÑO\n• El audio se analiza en tu iPhone. No se sube nada y no hay cuenta que crear.\n• No graba la noche completa: solo guarda clips breves de cada sonido detectado.\n• Los clips se excluyen de las copias de seguridad en la nube.\n\nQUÉ DETECTA\nInicia el monitoreo con un toque al acostarte y bloquea el teléfono: Somnia sigue escuchando. Durante la noche clasifica los sonidos en el dispositivo: ronquidos, respiración, tos, habla, movimiento y ruido ambiental. Cada evento queda con su hora y su intensidad aproximada.\n\nTU NOCHE DE UN VISTAZO\n• Ronquidos: cuántos episodios y cuántos minutos.\n• Gráfica del nivel de ruido de toda la noche.\n• Cada evento con su clip para escucharlo, y filtros por tipo de sonido.\n• Patrón de pausas: secuencias de ronquido, un silencio largo y una reanudación brusca. No es un diagnóstico; es una pista para comentar con un profesional si se repite.\n\nTENDENCIAS\nUna noche dice poco; el patrón importa. Tendencias reúne tus noches: promedio de minutos roncando, sonidos del cuerpo y duración, con gráficas por noche.\n\nPENSADO PARA NOCHES REALES\n• Sensibilidad ajustable para recámaras silenciosas o ruidosas.\n• Diseño oscuro para la hora de dormir.\n• Borra cualquier noche con sus clips cuando quieras.\n• En español e inglés.\n\nCÓMO USARLO\nPon el iPhone en el buró, a 30–60 cm de tu cabeza, conectado al cargador, e inicia el monitoreo al acostarte. En la mañana abre la noche para ver qué pasó.\n\nIMPORTANTE\nSomnia es una herramienta de autoconocimiento y apoyo. No es un dispositivo médico, no diagnostica ninguna condición y no sustituye a un profesional de la salud. Si te preocupa tu sueño, tus ronquidos o una posible apnea, consulta a un especialista."
+      }
+    },
+    "en-US": {
+      "capturas": "en",
+      "info": {
+        "name": "SesoLibre Somnia",
+        "subtitle": "Private snore & sleep monitor",
+        "privacyPolicyUrl": "https://sesolibre.com/politica-de-privacidad-somnia/"
+      },
+      "version": {
+        "promotionalText": "Find out how much you snore and what happens during your nights. Everything is analyzed on your iPhone: no accounts, no cloud, no audio uploads.",
+        "keywords": "snoring,snore,sleep,monitor,night,noise,apnea,cough,tracker,rest,private",
+        "supportUrl": "https://sesolibre.com",
+        "marketingUrl": "https://sesolibre.com",
+        "description": "Somnia is a night-time sleep monitor that does all its work on your own iPhone. It listens while you sleep, detects snoring and other sounds, and shows you how your night went — without accounts, servers or cloud.\n\nPRIVATE BY DESIGN\n• Audio is analyzed on your iPhone. Nothing is uploaded, and there is no account to create.\n• It doesn't record the whole night: it keeps only short clips of each detected sound.\n• Clips are excluded from cloud backups.\n\nWHAT IT DETECTS\nStart monitoring with one tap when you go to bed and lock your phone: Somnia keeps listening. During the night it classifies sounds on the device: snoring, breathing, coughing, speech, movement and ambient noise. Each event is saved with its time and an approximate loudness level.\n\nYOUR NIGHT AT A GLANCE\n• Snoring: how many episodes and how many minutes.\n• Noise chart for the whole night.\n• Every event with its clip to play back, and filters by type of sound.\n• Pause pattern: sequences of snoring, a long silence and an abrupt resumption. This is not a diagnosis — it's a hint to discuss with a health professional if it keeps happening.\n\nTRENDS\nOne night says little; the pattern matters. Trends brings your nights together: average minutes snoring, body sounds and duration, with charts per night.\n\nBUILT FOR REAL NIGHTS\n• Adjustable sensitivity for quiet or noisy bedrooms.\n• Dark design made for bedtime.\n• Delete any night with its clips whenever you want.\n• In English and Spanish.\n\nHOW TO USE IT\nPlace your iPhone on the nightstand, 1–2 ft (30–60 cm) from your head, plugged into the charger, and start monitoring when you go to bed. In the morning, open the night to see what happened.\n\nIMPORTANT\nSomnia is a self-awareness and support tool. It is not a medical device, does not diagnose any condition and does not replace a health professional. If you are worried about your sleep, your snoring or possible sleep apnea, please see a specialist."
+      }
+    }
+  },
+  "capturas": { "APP_IPHONE_67": "iphone-" }
+}
